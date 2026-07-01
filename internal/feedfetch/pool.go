@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"log"
 	"strings"
 	"time"
 
-	"murmur/internal/database"
-	"murmur/internal/rssfeed"
+	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/rssfeed"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -61,6 +62,7 @@ func fetchOne(ctx context.Context, db *database.Queries, fetchTimeout time.Durat
 			FeedID:      feed.ID,
 		})
 		if err != nil {
+			log.Printf("feedfetch: saving post %q: %v", item.Title, err)
 			continue
 		}
 		newPosts += int(rows)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 func handlerBrowse(s *state, cmd command, user database.User) error {

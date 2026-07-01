@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"murmur/internal/database"
-	"murmur/internal/rssfeed"
+	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/rssfeed"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )

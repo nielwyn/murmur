@@ -7,23 +7,25 @@ import (
 
 const CookieName = "murmur_token"
 
-func SetAuthCookie(w http.ResponseWriter, token string, expiresIn time.Duration) {
+func SetAuthCookie(w http.ResponseWriter, token string, expiresIn time.Duration, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Now().Add(expiresIn),
 	})
 }
 
-func ClearAuthCookie(w http.ResponseWriter) {
+func ClearAuthCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,

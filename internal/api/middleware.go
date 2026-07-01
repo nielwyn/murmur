@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"murmur/internal/auth"
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/auth"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 type contextKey string
@@ -38,5 +38,9 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func userFromContext(r *http.Request) database.User {
-	return r.Context().Value(userContextKey).(database.User)
+	u, ok := r.Context().Value(userContextKey).(database.User)
+	if !ok {
+		panic("userFromContext called on unauthenticated request")
+	}
+	return u
 }

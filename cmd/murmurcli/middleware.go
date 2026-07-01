@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 // middlewareLoggedIn looks up the user named in the config file and passes

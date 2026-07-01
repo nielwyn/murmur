@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"murmur/internal/auth"
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/auth"
+	"github.com/nielwyn/murmur/internal/database"
 
 	"github.com/google/uuid"
 )
@@ -28,7 +28,7 @@ func (s *Server) issueSession(w http.ResponseWriter, user database.User) error {
 	if err != nil {
 		return err
 	}
-	auth.SetAuthCookie(w, token, tokenExpiry)
+	auth.SetAuthCookie(w, token, tokenExpiry, s.cfg.Secure)
 	return nil
 }
 
@@ -101,7 +101,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	auth.ClearAuthCookie(w)
+	auth.ClearAuthCookie(w, s.cfg.Secure)
 	w.WriteHeader(http.StatusNoContent)
 }
 

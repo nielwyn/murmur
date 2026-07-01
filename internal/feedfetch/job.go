@@ -3,7 +3,7 @@ package feedfetch
 import (
 	"time"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 // FetchJob is one unit of work: fetch a single feed and store any new posts.

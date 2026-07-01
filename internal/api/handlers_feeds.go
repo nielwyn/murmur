@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 
 	"github.com/google/uuid"
 )
@@ -12,14 +12,14 @@ import (
 type feedResponse struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
-	Url         string    `json:"url"`
+	URL         string    `json:"url"`
 	CreatorName string    `json:"creator_name,omitempty"`
 }
 
 type followResponse struct {
 	FeedID   uuid.UUID `json:"feed_id"`
 	FeedName string    `json:"feed_name,omitempty"`
-	FeedUrl  string    `json:"feed_url,omitempty"`
+	FeedURL  string    `json:"feed_url,omitempty"`
 }
 
 func (s *Server) handleListFeeds(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func (s *Server) handleListFeeds(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]feedResponse, len(feeds))
 	for i, f := range feeds {
-		resp[i] = feedResponse{ID: f.ID, Name: f.Name, Url: f.Url, CreatorName: f.CreatorName}
+		resp[i] = feedResponse{ID: f.ID, Name: f.Name, URL: f.Url, CreatorName: f.CreatorName}
 	}
 	respondJSON(w, http.StatusOK, resp)
 }
@@ -70,7 +70,7 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, feedResponse{ID: feed.ID, Name: feed.Name, Url: feed.Url})
+	respondJSON(w, http.StatusCreated, feedResponse{ID: feed.ID, Name: feed.Name, URL: feed.Url})
 }
 
 func (s *Server) handleListFollowing(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +84,7 @@ func (s *Server) handleListFollowing(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]followResponse, len(follows))
 	for i, f := range follows {
-		resp[i] = followResponse{FeedID: f.FeedID, FeedName: f.FeedName, FeedUrl: f.FeedUrl}
+		resp[i] = followResponse{FeedID: f.FeedID, FeedName: f.FeedName, FeedURL: f.FeedUrl}
 	}
 	respondJSON(w, http.StatusOK, resp)
 }

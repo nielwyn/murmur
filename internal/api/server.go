@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"murmur/internal/config"
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/config"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 type Server struct {

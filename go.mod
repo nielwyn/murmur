@@ -1,4 +1,4 @@
-module murmur
+module github.com/nielwyn/murmur
 
 go 1.26.4
 

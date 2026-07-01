@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"io"
+	"net"
 	"net/http"
 	"time"
 )
@@ -25,6 +25,14 @@ type RSSItem struct {
 	PubDate     string `xml:"pubDate"`
 }
 
+var httpClient = &http.Client{
+	Transport: &http.Transport{
+		DialContext:         (&net.Dialer{Timeout: 5 * time.Second}).DialContext,
+		TLSHandshakeTimeout: 5 * time.Second,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
+
 // Fetch retrieves and parses an RSS feed. The caller controls the request
 // lifetime via ctx (used for per-fetch timeouts by the scheduler).
 func Fetch(ctx context.Context, feedURL string) (*RSSFeed, error) {
@@ -34,7 +42,7 @@ func Fetch(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 	req.Header.Set("User-Agent", "murmur/0.1 (+https://github.com/nielwyn/murmur)")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +52,8 @@ func Fetch(ctx context.Context, feedURL string) (*RSSFeed, error) {
 		return nil, fmt.Errorf("unexpected status %d fetching %s", resp.StatusCode, feedURL)
 	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	var feed RSSFeed
-	if err := xml.Unmarshal(data, &feed); err != nil {
+	if err := xml.NewDecoder(resp.Body).Decode(&feed); err != nil {
 		return nil, fmt.Errorf("parsing feed %s: %w", feedURL, err)
 	}
 	return &feed, nil

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"murmur/internal/config"
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/config"
+	"github.com/nielwyn/murmur/internal/database"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

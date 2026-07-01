@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 )
 
 const (
@@ -65,7 +65,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 	results := make(chan FetchResult)
 
 	var workers sync.WaitGroup
-	for i := 0; i < s.cfg.Workers; i++ {
+	for range s.cfg.Workers {
 		workers.Go(func() {
 			worker(ctx, s.db, s.cfg.FetchTimeout, jobs, results)
 		})

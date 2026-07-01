@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/database"
 
 	"golang.org/x/crypto/bcrypt"
 )

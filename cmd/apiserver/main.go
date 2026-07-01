@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"murmur/internal/api"
-	"murmur/internal/config"
-	"murmur/internal/database"
-	"murmur/internal/feedfetch"
+	"github.com/nielwyn/murmur/internal/api"
+	"github.com/nielwyn/murmur/internal/config"
+	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/feedfetch"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -41,8 +41,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: handler,
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

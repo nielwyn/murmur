@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
 const configFileName = ".murmurconfig.json"
@@ -11,6 +12,7 @@ type Config struct {
 	DBUrl           string `json:"db_url"`
 	CurrentUserName string `json:"current_user_name"`
 	JWTSecret       string `json:"jwt_secret"`
+	Secure          bool   `json:"secure"`
 }
 
 func Read() (Config, error) {
@@ -57,7 +59,7 @@ func getConfigFilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return dir + "/" + configFileName, nil
+	return filepath.Join(dir, configFileName), nil
 }
 
 func defaultConfig() Config {
