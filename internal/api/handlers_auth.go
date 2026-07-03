@@ -14,13 +14,13 @@ import (
 const tokenExpiry = 7 * 24 * time.Hour
 
 type userResponse struct {
-	ID    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
 }
 
 func toUserResponse(u database.User) userResponse {
-	return userResponse{ID: u.ID, Name: u.Name, Email: u.Email}
+	return userResponse{ID: u.ID, Username: u.Username, Email: u.Email}
 }
 
 func (s *Server) issueSession(w http.ResponseWriter, user database.User) error {
@@ -34,7 +34,7 @@ func (s *Server) issueSession(w http.ResponseWriter, user database.User) error {
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Name     string `json:"name"`
+		Username string `json:"username"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -42,8 +42,8 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Name == "" || req.Email == "" || req.Password == "" {
-		respondError(w, http.StatusBadRequest, "name, email, and password are required")
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		respondError(w, http.StatusBadRequest, "username, email, and password are required")
 		return
 	}
 
@@ -54,12 +54,12 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := s.db.CreateUser(r.Context(), database.CreateUserParams{
-		Name:           req.Name,
+		Username:       req.Username,
 		Email:          req.Email,
 		HashedPassword: hashed,
 	})
 	if err != nil {
-		respondError(w, http.StatusConflict, "could not create user (name or email may already be taken)")
+		respondError(w, http.StatusConflict, "could not create user (username or email may already be taken)")
 		return
 	}
 
@@ -73,7 +73,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Name     string `json:"name"`
+		UserName string `json:"username"`
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -81,7 +81,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.db.GetUserByName(r.Context(), req.Name)
+	user, err := s.db.GetUserByName(r.Context(), req.UserName)
 	if err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid username or password")
 		return

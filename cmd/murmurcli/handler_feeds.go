@@ -68,7 +68,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("following feed: %w", err)
 	}
 
-	fmt.Printf("%s now follows %q\n", user.Name, feed.Name)
+	fmt.Printf("%s now follows %q\n", user.Username, feed.Name)
 	return nil
 }
 
@@ -94,7 +94,7 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("you don't follow %q", feed.Name)
 	}
 
-	fmt.Printf("%s unfollowed %q\n", user.Name, feed.Name)
+	fmt.Printf("%s unfollowed %q\n", user.Username, feed.Name)
 	return nil
 }
 
@@ -109,7 +109,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 		return nil
 	}
 
-	fmt.Printf("%s follows:\n", user.Name)
+	fmt.Printf("%s follows:\n", user.Username)
 	for _, f := range follows {
 		fmt.Printf("* %s (%s)\n", f.FeedName, f.FeedUrl)
 	}

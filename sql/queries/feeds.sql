@@ -15,7 +15,7 @@ WHERE
 -- name: GetFeeds :many
 SELECT
     feeds.*,
-    users.name AS creator_name
+    users.username AS creator_name
 FROM
     feeds
     JOIN users ON feeds.user_id = users.id

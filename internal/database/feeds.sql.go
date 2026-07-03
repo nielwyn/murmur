@@ -14,8 +14,9 @@ import (
 
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (name, url, user_id)
-VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+    VALUES ($1, $2, $3)
+RETURNING
+    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
 `
 
 type CreateFeedParams struct {
@@ -41,7 +42,12 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 }
 
 const getFeedByURL = `-- name: GetFeedByURL :one
-SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds FROM feeds WHERE url = $1
+SELECT
+    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+FROM
+    feeds
+WHERE
+    url = $1
 `
 
 func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
@@ -61,10 +67,14 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 }
 
 const getFeeds = `-- name: GetFeeds :many
-SELECT feeds.id, feeds.created_at, feeds.updated_at, feeds.name, feeds.url, feeds.user_id, feeds.last_fetched_at, feeds.fetch_interval_seconds, users.name AS creator_name
-FROM feeds
-JOIN users ON feeds.user_id = users.id
-ORDER BY feeds.created_at
+SELECT
+    feeds.id, feeds.created_at, feeds.updated_at, feeds.name, feeds.url, feeds.user_id, feeds.last_fetched_at, feeds.fetch_interval_seconds,
+    users.username AS creator_name
+FROM
+    feeds
+    JOIN users ON feeds.user_id = users.id
+ORDER BY
+    feeds.created_at
 `
 
 type GetFeedsRow struct {
@@ -110,10 +120,15 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 }
 
 const getFeedsDueForFetch = `-- name: GetFeedsDueForFetch :many
-SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds FROM feeds
-WHERE last_fetched_at IS NULL
-   OR last_fetched_at < NOW() - (fetch_interval_seconds * INTERVAL '1 second')
-ORDER BY last_fetched_at ASC NULLS FIRST
+SELECT
+    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+FROM
+    feeds
+WHERE
+    last_fetched_at IS NULL
+    OR last_fetched_at < NOW() - (fetch_interval_seconds * INTERVAL '1 second')
+ORDER BY
+    last_fetched_at ASC NULLS FIRST
 LIMIT $1
 `
 
@@ -147,10 +162,15 @@ func (q *Queries) GetFeedsDueForFetch(ctx context.Context, limit int32) ([]Feed,
 }
 
 const markFeedFetched = `-- name: MarkFeedFetched :one
-UPDATE feeds
-SET last_fetched_at = NOW(), updated_at = NOW()
-WHERE id = $1
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+UPDATE
+    feeds
+SET
+    last_fetched_at = NOW(),
+    updated_at = NOW()
+WHERE
+    id = $1
+RETURNING
+    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
 `
 
 func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) (Feed, error) {

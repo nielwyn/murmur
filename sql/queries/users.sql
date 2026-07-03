@@ -1,5 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO users (name, email, hashed_password)
+INSERT INTO users (username, email, hashed_password)
     VALUES ($1, $2, $3)
 RETURNING
     *;
@@ -10,7 +10,7 @@ SELECT
 FROM
     users
 WHERE
-    name = $1;
+    username = $1;
 
 -- name: GetUserByID :one
 SELECT

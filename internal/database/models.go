@@ -49,7 +49,7 @@ type User struct {
 	ID             uuid.UUID        `json:"id"`
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
 	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
-	Name           string           `json:"name"`
+	Username       string           `json:"username"`
 	Email          string           `json:"email"`
 	HashedPassword string           `json:"hashed_password"`
 }

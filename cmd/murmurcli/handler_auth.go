@@ -21,7 +21,7 @@ func handlerRegister(s *state, cmd command) error {
 	}
 
 	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
-		Name:           name,
+		Username:       name,
 		Email:          email,
 		HashedPassword: string(hashed),
 	})
@@ -29,11 +29,11 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("creating user: %w", err)
 	}
 
-	if err := s.cfg.SetUser(user.Name); err != nil {
+	if err := s.cfg.SetUser(user.Username); err != nil {
 		return fmt.Errorf("saving current user: %w", err)
 	}
 
-	fmt.Printf("User %q created and logged in\n", user.Name)
+	fmt.Printf("User %q created and logged in\n", user.Username)
 	return nil
 }
 
@@ -45,17 +45,17 @@ func handlerLogin(s *state, cmd command) error {
 
 	user, err := s.db.GetUserByName(context.Background(), name)
 	if err != nil {
-		return fmt.Errorf("user %q not found: %w", name, err)
+		return fmt.Errorf("username %q not found: %w", name, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password)); err != nil {
 		return fmt.Errorf("invalid password")
 	}
 
-	if err := s.cfg.SetUser(user.Name); err != nil {
+	if err := s.cfg.SetUser(user.Username); err != nil {
 		return fmt.Errorf("saving current user: %w", err)
 	}
 
-	fmt.Printf("Logged in as %q\n", user.Name)
+	fmt.Printf("Logged in as %q\n", user.Username)
 	return nil
 }

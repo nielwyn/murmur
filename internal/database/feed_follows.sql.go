@@ -14,8 +14,9 @@ import (
 
 const createFeedFollow = `-- name: CreateFeedFollow :one
 INSERT INTO feed_follows (user_id, feed_id)
-VALUES ($1, $2)
-RETURNING id, created_at, updated_at, user_id, feed_id
+    VALUES ($1, $2)
+RETURNING
+    id, created_at, updated_at, user_id, feed_id
 `
 
 type CreateFeedFollowParams struct {
@@ -38,7 +39,8 @@ func (q *Queries) CreateFeedFollow(ctx context.Context, arg CreateFeedFollowPara
 
 const deleteFeedFollow = `-- name: DeleteFeedFollow :execrows
 DELETE FROM feed_follows
-WHERE user_id = $1 AND feed_id = $2
+WHERE user_id = $1
+    AND feed_id = $2
 `
 
 type DeleteFeedFollowParams struct {
@@ -55,11 +57,17 @@ func (q *Queries) DeleteFeedFollow(ctx context.Context, arg DeleteFeedFollowPara
 }
 
 const getFeedFollowsForUser = `-- name: GetFeedFollowsForUser :many
-SELECT feed_follows.id, feed_follows.created_at, feed_follows.updated_at, feed_follows.user_id, feed_follows.feed_id, feeds.name AS feed_name, feeds.url AS feed_url
-FROM feed_follows
-JOIN feeds ON feed_follows.feed_id = feeds.id
-WHERE feed_follows.user_id = $1
-ORDER BY feed_follows.created_at
+SELECT
+    feed_follows.id, feed_follows.created_at, feed_follows.updated_at, feed_follows.user_id, feed_follows.feed_id,
+    feeds.name AS feed_name,
+    feeds.url AS feed_url
+FROM
+    feed_follows
+    JOIN feeds ON feed_follows.feed_id = feeds.id
+WHERE
+    feed_follows.user_id = $1
+ORDER BY
+    feed_follows.created_at
 `
 
 type GetFeedFollowsForUserRow struct {

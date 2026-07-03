@@ -10,7 +10,7 @@ const configFileName = ".murmurconfig.json"
 
 type Config struct {
 	DBUrl           string `json:"db_url"`
-	CurrentUserName string `json:"current_user_name"`
+	CurrentUsername string `json:"current_username"`
 	JWTSecret       string `json:"jwt_secret"`
 	Secure          bool   `json:"secure"`
 }
@@ -38,7 +38,7 @@ func Read() (Config, error) {
 }
 
 func (c *Config) SetUser(name string) error {
-	c.CurrentUserName = name
+	c.CurrentUsername = name
 	return write(*c)
 }
 
