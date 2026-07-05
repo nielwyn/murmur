@@ -1,0 +1,40 @@
+@URL = http://localhost:8080
+
+### register
+
+POST {{URL}}/api/register HTTP/1.1
+Content-Type: "application/json"
+
+{
+  "username": "nielwyn",
+  "email": "nielwyn@gmail.com",
+  "password": "123123123"
+}
+
+### login
+
+POST {{URL}}/api/login HTTP/1.1
+Content-Type: "application/json"
+
+{
+  "username": "nielwyn",
+  "password": "123123123"
+}
+
+### create feeds
+
+POST {{URL}}/api/feeds HTTP/1.1
+Content-Type: "application/json"
+
+{
+  "name": "hacker news",
+  "url": "https://hnrss.org/frontpage"
+}
+
+### get feeds
+
+GET {{URL}}/api/feeds HTTP/1.1
+
+### follow feeds
+
+POST {{URL}}/api/feeds/d708d4e5-45be-4222-9702-24d672b14ee5/follow HTTP/1.1

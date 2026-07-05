@@ -2,12 +2,22 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/nielwyn/murmur/internal/database"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+const pgUniqueViolation = "23505"
+
+// Reports whether err is a Postgres unique-constraint violation.
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation
+}
 
 type feedResponse struct {
 	ID          uuid.UUID `json:"id"`
@@ -58,15 +68,11 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 		UserID: user.ID,
 	})
 	if err != nil {
-		respondError(w, http.StatusConflict, "could not create feed (url may already exist)")
-		return
-	}
-
-	if _, err := s.db.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feed.ID,
-	}); err != nil {
-		respondError(w, http.StatusInternalServerError, "feed created but could not follow it")
+		if isUniqueViolation(err) {
+			respondError(w, http.StatusConflict, "a feed with this url already exists")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "could not create feed")
 		return
 	}
 
