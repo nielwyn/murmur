@@ -1,0 +1,149 @@
+@import "@fontsource-variable/fraunces";
+@import "@picocss/pico/css/pico.sand.css";
+
+/*
+ * murmur — "the quiet newspaper"
+ * Editorial bold-minimalism on top of Pico: Fraunces for display type,
+ * warm paper/ink palette, mono section labels, hairline rules.
+ */
+
+:root {
+    --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas,
+        monospace;
+
+    /* paper & ink */
+    --paper: #f6f2ea;
+    --paper-raised: #fbf8f2;
+    --ink: #211d18;
+    --ink-soft: #5f584e;
+    --ink-faint: #97907f;
+    --rule: #d9d2c3;
+    --accent: #a03c2e; /* newspaper oxblood */
+    --accent-ink: #f6f2ea;
+
+    --pico-font-family: var(--pico-font-family-sans-serif);
+    --pico-background-color: var(--paper);
+    --pico-color: var(--ink-soft);
+    --pico-h1-color: var(--ink);
+    --pico-h2-color: var(--ink);
+    --pico-h3-color: var(--ink);
+    --pico-muted-color: var(--ink-faint);
+    --pico-muted-border-color: var(--rule);
+    --pico-primary: var(--accent);
+    --pico-primary-background: var(--accent);
+    --pico-primary-border: var(--accent);
+    --pico-primary-inverse: var(--accent-ink);
+    --pico-primary-hover: #7e2f24;
+    --pico-primary-hover-background: #7e2f24;
+    --pico-primary-hover-border: #7e2f24;
+    --pico-primary-underline: transparent;
+    --pico-card-background-color: var(--paper-raised);
+    --pico-card-border-color: var(--rule);
+    --pico-form-element-background-color: var(--paper-raised);
+    --pico-form-element-border-color: var(--rule);
+    --pico-form-element-focus-color: var(--accent);
+    --pico-border-radius: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* warm ink-on-slate, never pure black */
+        --paper: #171512;
+        --paper-raised: #1f1c18;
+        --ink: #ece5d8;
+        --ink-soft: #b3aa9a;
+        --ink-faint: #7c7466;
+        --rule: #38332b;
+        --accent: #d98873;
+        --accent-ink: #171512;
+        --pico-primary-hover: #e5a291;
+        --pico-primary-hover-background: #e5a291;
+        --pico-primary-hover-border: #e5a291;
+    }
+}
+
+/* atmospheric light source instead of a flat background */
+body {
+    background:
+        radial-gradient(
+            120% 80% at 50% 0%,
+            var(--paper-raised) 0%,
+            var(--paper) 60%
+        )
+        fixed;
+}
+
+/* ---- editorial voice ---------------------------------------------- */
+
+.display {
+    font-family: var(--font-display);
+    font-variation-settings:
+        "opsz" 144,
+        "SOFT" 40,
+        "WONK" 1;
+    font-weight: 560;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.section-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+}
+
+.rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 0;
+}
+
+.rule-heavy {
+    border: none;
+    border-top: 2px solid var(--ink);
+    margin: 0;
+}
+
+.muted {
+    color: var(--pico-muted-color);
+}
+
+.error {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+}
+
+/* links: animated underline, ink not blue */
+a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 100%;
+    background-size: 0% 1px;
+    transition:
+        background-size 0.25s ease,
+        color 0.15s ease;
+}
+
+a:hover {
+    color: var(--accent);
+    background-size: 100% 1px;
+}
+
+button {
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    a,
+    button {
+        transition: none;
+    }
+}
