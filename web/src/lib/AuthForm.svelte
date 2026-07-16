@@ -30,7 +30,7 @@
 
 <div class="cover">
     <hgroup>
-        <span class="section-label">est. 2026 · a quiet place for feeds</span>
+        <span class="section-label">no algorithm · your feeds, in order</span>
         <h1 class="display">murmur</h1>
     </hgroup>
 

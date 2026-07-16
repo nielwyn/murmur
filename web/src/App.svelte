@@ -2,9 +2,11 @@
     import { api, type User } from "./lib/api";
     import AuthForm from "./lib/AuthForm.svelte";
     import Feeds from "./lib/Feeds.svelte";
+    import Posts from "./lib/Posts.svelte";
 
     let user: User | null = $state(null);
     let checking = $state(true);
+    let view: "posts" | "feeds" = $state("posts");
 
     const dateline = new Date()
         .toLocaleDateString("en-US", {
@@ -46,8 +48,30 @@
             <hr class="rule-heavy" />
             <h1 class="display">murmur</h1>
             <hr class="rule" />
+            <nav class="paper-nav section-label" aria-label="sections">
+                <button
+                    class="nav-tab"
+                    aria-current={view === "posts" ? "page" : undefined}
+                    onclick={() => (view = "posts")}
+                >
+                    posts
+                </button>
+                <button
+                    class="nav-tab"
+                    aria-current={view === "feeds" ? "page" : undefined}
+                    onclick={() => (view = "feeds")}
+                >
+                    feeds
+                </button>
+                <span class="soon" title="coming soon">status</span>
+            </nav>
+            <hr class="rule" />
         </header>
-        <Feeds />
+        {#if view === "posts"}
+            <Posts />
+        {:else}
+            <Feeds />
+        {/if}
     {/if}
 </main>
 
@@ -55,7 +79,6 @@
     main {
         max-width: 42rem;
         padding-block: 2rem;
-        height: 100vh;
     }
 
     .center {
@@ -65,6 +88,44 @@
 
     .masthead {
         margin-bottom: 2.5rem;
+    }
+
+    /* section nav sits between two rules, like a paper's index bar */
+    .paper-nav {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1.5rem;
+        padding: 0.55rem 0;
+    }
+
+    .nav-tab {
+        all: unset;
+        cursor: pointer;
+        font: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+        color: inherit;
+        padding-bottom: 2px;
+        border-bottom: 1px solid transparent;
+    }
+
+    .nav-tab:hover {
+        color: var(--accent);
+    }
+
+    .nav-tab[aria-current="page"] {
+        color: var(--ink);
+        border-bottom-color: var(--accent);
+    }
+
+    .nav-tab:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+    }
+
+    .paper-nav .soon {
+        opacity: 0.6;
+        cursor: default;
     }
 
     .dateline {
