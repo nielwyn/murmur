@@ -17,23 +17,23 @@ import (
 // worker pulls jobs until the channel is closed, sending one FetchResult per
 // job to results. Running several of these concurrently is the fan-out half
 // of the pipeline.
-func worker(ctx context.Context, db *database.Queries, fetchTimeout time.Duration, jobs <-chan FetchJob, results chan<- FetchResult) {
+func (s *Scheduler) worker(ctx context.Context, jobs <-chan FetchJob, results chan<- FetchResult) {
 	for job := range jobs {
-		results <- fetchOne(ctx, db, fetchTimeout, job.Feed)
+		results <- s.fetchOne(ctx, job.Feed)
 	}
 }
 
 // fetchOne fetches a single feed and stores any new posts. fetchTimeout
 // bounds the HTTP request so one slow/unresponsive feed can't stall a
 // worker (and thus the whole batch) indefinitely.
-func fetchOne(ctx context.Context, db *database.Queries, fetchTimeout time.Duration, feed database.Feed) FetchResult {
+func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResult {
 	start := time.Now()
 
-	if _, err := db.MarkFeedFetched(ctx, feed.ID); err != nil {
+	if _, err := s.db.MarkFeedFetched(ctx, feed.ID); err != nil {
 		return FetchResult{Feed: feed, Duration: time.Since(start), Err: fmt.Errorf("marking feed fetched: %w", err)}
 	}
 
-	fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	fetchCtx, cancel := context.WithTimeout(ctx, s.cfg.FetchTimeout)
 	defer cancel()
 
 	rss, err := rssfeed.Fetch(fetchCtx, feed.Url)
@@ -54,7 +54,7 @@ func fetchOne(ctx context.Context, db *database.Queries, fetchTimeout time.Durat
 
 		description := strings.TrimSpace(html.UnescapeString(item.Description))
 
-		rows, err := db.CreatePost(ctx, database.CreatePostParams{
+		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
 			Url:         item.Link,
 			Description: &description,

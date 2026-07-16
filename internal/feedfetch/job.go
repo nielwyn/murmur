@@ -11,7 +11,6 @@ type FetchJob struct {
 	Feed database.Feed
 }
 
-// FetchResult reports the outcome of processing a FetchJob.
 type FetchResult struct {
 	Feed     database.Feed
 	NewPosts int

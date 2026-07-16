@@ -16,17 +16,13 @@ const (
 	defaultFetchTimeout = 10 * time.Second
 )
 
-// Config controls the scheduler's behavior. Zero values fall back to
-// sensible defaults.
+// Config controls the scheduler's behavior. Zero values fall back to defaults.
 type Config struct {
-	// Workers is the number of feeds fetched concurrently.
 	Workers int
 	// Interval is how often the scheduler checks for due feeds. Individual
 	// feeds are still only fetched per their own fetch_interval_seconds.
-	Interval time.Duration
-	// BatchSize is the max number of due feeds fetched per tick.
-	BatchSize int32
-	// FetchTimeout bounds a single feed fetch.
+	Interval     time.Duration
+	BatchSize    int32
 	FetchTimeout time.Duration
 }
 
@@ -67,7 +63,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 	var workers sync.WaitGroup
 	for range s.cfg.Workers {
 		workers.Go(func() {
-			worker(ctx, s.db, s.cfg.FetchTimeout, jobs, results)
+			s.worker(ctx, jobs, results)
 		})
 	}
 
