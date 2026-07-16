@@ -2,10 +2,11 @@
 @import "@picocss/pico/css/pico.sand.css";
 
 /*
- * murmur — "the quiet newspaper"
  * Editorial bold-minimalism on top of Pico: Fraunces for display type,
  * warm paper/ink palette, mono section labels, hairline rules.
  */
+
+/* ---- design tokens ------------------------------------------------- */
 
 :root {
     --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
@@ -63,6 +64,8 @@
     }
 }
 
+/* ---- base layout --------------------------------------------------- */
+
 /* atmospheric light source instead of a flat background */
 body {
     background:
@@ -72,6 +75,10 @@ body {
             var(--paper) 60%
         )
         fixed;
+}
+
+#app {
+    min-height: 100dvh;
 }
 
 /* ---- editorial voice ---------------------------------------------- */
@@ -118,7 +125,9 @@ body {
     color: var(--accent);
 }
 
-/* links: animated underline, ink not blue */
+/* ---- links & buttons ----------------------------------------------- */
+
+/* animated underline, ink not blue */
 a {
     color: var(--ink-soft);
     text-decoration: none;
@@ -140,6 +149,8 @@ button {
         border-color 0.15s ease,
         color 0.15s ease;
 }
+
+/* ---- accessibility -------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
     a,
