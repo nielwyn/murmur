@@ -3,10 +3,11 @@
     import AuthForm from "./lib/AuthForm.svelte";
     import Feeds from "./lib/Feeds.svelte";
     import Posts from "./lib/Posts.svelte";
+    import Status from "./lib/Status.svelte";
 
     let user: User | null = $state(null);
     let checking = $state(true);
-    let view: "posts" | "feeds" = $state("posts");
+    let view: "posts" | "feeds" | "status" = $state("posts");
 
     const dateline = new Date()
         .toLocaleDateString("en-US", {
@@ -63,14 +64,22 @@
                 >
                     feeds
                 </button>
-                <span class="soon" title="coming soon">status</span>
+                <button
+                    class="nav-tab"
+                    aria-current={view === "status" ? "page" : undefined}
+                    onclick={() => (view = "status")}
+                >
+                    status
+                </button>
             </nav>
             <hr class="rule" />
         </header>
         {#if view === "posts"}
             <Posts />
-        {:else}
+        {:else if view === "feeds"}
             <Feeds />
+        {:else}
+            <Status />
         {/if}
     {/if}
 </main>
@@ -121,11 +130,6 @@
     .nav-tab:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 3px;
-    }
-
-    .paper-nav .soon {
-        opacity: 0.6;
-        cursor: default;
     }
 
     .dateline {
