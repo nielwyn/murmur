@@ -1,25 +1,14 @@
 package main
 
-import (
-	"context"
-	"fmt"
+import "fmt"
 
-	"github.com/nielwyn/murmur/internal/database"
-)
-
-// middlewareLoggedIn looks up the user named in the config file and passes
-// it to the wrapped handler, so handlers don't each repeat the lookup.
-func middlewareLoggedIn(handler func(*state, command, database.User) error) func(*state, command) error {
-	return func(s *state, cmd command) error {
-		if s.cfg.CurrentUsername == "" {
+// requireAuth fails fast when there's no saved session token; the API
+// still validates it on every request.
+func (s *state) requireAuth(next func(command) error) func(command) error {
+	return func(cmd command) error {
+		if s.cfg.AuthToken == "" {
 			return fmt.Errorf("not logged in: run `register` or `login` first")
 		}
-
-		user, err := s.db.GetUserByName(context.Background(), s.cfg.CurrentUsername)
-		if err != nil {
-			return fmt.Errorf("could not find current user %q: %w", s.cfg.CurrentUsername, err)
-		}
-
-		return handler(s, cmd, user)
+		return next(cmd)
 	}
 }

@@ -1,21 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
 	"github.com/nielwyn/murmur/internal/config"
-	"github.com/nielwyn/murmur/internal/database"
-	"github.com/nielwyn/murmur/internal/service"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type state struct {
-	cfg *config.Config
-	db  *database.Queries
-	svc *service.Service
+	cfg    *config.Config
+	client *apiClient
 }
 
 type command struct {
@@ -24,19 +18,19 @@ type command struct {
 }
 
 type commands struct {
-	handlers map[string]func(*state, command) error
+	handlers map[string]func(command) error
 }
 
-func (c *commands) register(name string, f func(*state, command) error) {
-	c.handlers[name] = f
+func (c *commands) register(name string, handler func(command) error) {
+	c.handlers[name] = handler
 }
 
-func (c *commands) run(s *state, cmd command) error {
+func (c *commands) run(cmd command) error {
 	handler, ok := c.handlers[cmd.name]
 	if !ok {
 		return fmt.Errorf("unknown command: %s", cmd.name)
 	}
-	return handler(s, cmd)
+	return handler(cmd)
 }
 
 func main() {
@@ -51,33 +45,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	pool, err := pgxpool.New(context.Background(), cfg.DBUrl)
-	if err != nil {
-		fmt.Println("error connecting to database:", err)
-		os.Exit(1)
-	}
-	defer pool.Close()
-
-	db := database.New(pool)
 	s := &state{
-		cfg: &cfg,
-		db:  db,
-		svc: service.New(db),
+		cfg:    &cfg,
+		client: newAPIClient(cfg.APIURL, cfg.AuthToken),
 	}
 
-	cmds := commands{handlers: map[string]func(*state, command) error{}}
-	cmds.register("register", handlerRegister)
-	cmds.register("login", handlerLogin)
-	cmds.register("addfeed", middlewareLoggedIn(handlerAddFeed))
-	cmds.register("feeds", handlerFeeds)
-	cmds.register("follow", middlewareLoggedIn(handlerFollow))
-	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
-	cmds.register("following", middlewareLoggedIn(handlerFollowing))
-	cmds.register("browse", middlewareLoggedIn(handlerBrowse))
-	cmds.register("agg", handlerAgg)
+	cmds := commands{handlers: map[string]func(command) error{}}
+
+	cmds.register("register", s.handleRegister)
+	cmds.register("login", s.handleLogin)
+
+	cmds.register("feeds", s.requireAuth(s.handleListFeeds))
+	cmds.register("addfeed", s.requireAuth(s.handleCreateFeed))
+	cmds.register("following", s.requireAuth(s.handleListFollowing))
+	cmds.register("follow", s.requireAuth(s.handleFollowFeed))
+	cmds.register("unfollow", s.requireAuth(s.handleUnfollowFeed))
 
 	cmd := command{name: os.Args[1], args: os.Args[2:]}
-	if err := cmds.run(s, cmd); err != nil {
+	if err := cmds.run(cmd); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
