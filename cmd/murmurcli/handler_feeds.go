@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/service"
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -13,19 +15,15 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	}
 	name, url := cmd.args[0], cmd.args[1]
 
-	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
-		Name:   name,
-		Url:    url,
-		UserID: user.ID,
-	})
+	feed, err := s.svc.CreateFeed(context.Background(), user.ID, name, url)
 	if err != nil {
+		if errors.Is(err, service.ErrFeedExists) {
+			return fmt.Errorf("a feed with this url already exists")
+		}
 		return fmt.Errorf("creating feed: %w", err)
 	}
 
-	if _, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feed.ID,
-	}); err != nil {
+	if _, err := s.svc.FollowFeed(context.Background(), user.ID, feed.ID); err != nil {
 		return fmt.Errorf("following feed: %w", err)
 	}
 
@@ -61,10 +59,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("feed %q not found: %w", url, err)
 	}
 
-	if _, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feed.ID,
-	}); err != nil {
+	if _, err := s.svc.FollowFeed(context.Background(), user.ID, feed.ID); err != nil {
 		return fmt.Errorf("following feed: %w", err)
 	}
 
@@ -83,15 +78,11 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("feed %q not found: %w", url, err)
 	}
 
-	rows, err := s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feed.ID,
-	})
-	if err != nil {
+	if err := s.svc.UnfollowFeed(context.Background(), user.ID, feed.ID); err != nil {
+		if errors.Is(err, service.ErrNotFollowing) {
+			return fmt.Errorf("you don't follow %q", feed.Name)
+		}
 		return fmt.Errorf("unfollowing feed: %w", err)
-	}
-	if rows == 0 {
-		return fmt.Errorf("you don't follow %q", feed.Name)
 	}
 
 	fmt.Printf("%s unfollowed %q\n", user.Username, feed.Name)

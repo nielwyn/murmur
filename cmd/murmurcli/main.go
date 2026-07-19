@@ -7,6 +7,7 @@ import (
 
 	"github.com/nielwyn/murmur/internal/config"
 	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/service"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -14,6 +15,7 @@ import (
 type state struct {
 	cfg *config.Config
 	db  *database.Queries
+	svc *service.Service
 }
 
 type command struct {
@@ -56,9 +58,11 @@ func main() {
 	}
 	defer pool.Close()
 
+	db := database.New(pool)
 	s := &state{
 		cfg: &cfg,
-		db:  database.New(pool),
+		db:  db,
+		svc: service.New(db),
 	}
 
 	cmds := commands{handlers: map[string]func(*state, command) error{}}

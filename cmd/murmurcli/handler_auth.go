@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/nielwyn/murmur/internal/database"
-
-	"golang.org/x/crypto/bcrypt"
+	"github.com/nielwyn/murmur/internal/service"
 )
 
 func handlerRegister(s *state, cmd command) error {
@@ -15,16 +14,7 @@ func handlerRegister(s *state, cmd command) error {
 	}
 	name, email, password := cmd.args[0], cmd.args[1], cmd.args[2]
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("hashing password: %w", err)
-	}
-
-	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
-		Username:       name,
-		Email:          email,
-		HashedPassword: string(hashed),
-	})
+	user, err := s.svc.Register(context.Background(), name, email, password)
 	if err != nil {
 		return fmt.Errorf("creating user: %w", err)
 	}
@@ -43,12 +33,11 @@ func handlerLogin(s *state, cmd command) error {
 	}
 	name, password := cmd.args[0], cmd.args[1]
 
-	user, err := s.db.GetUserByName(context.Background(), name)
+	user, err := s.svc.Login(context.Background(), name, password)
 	if err != nil {
-		return fmt.Errorf("username %q not found: %w", name, err)
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password)); err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return fmt.Errorf("username %q not found", name)
+		}
 		return fmt.Errorf("invalid password")
 	}
 

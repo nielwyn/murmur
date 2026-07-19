@@ -16,6 +16,8 @@ import (
 	"github.com/nielwyn/murmur/internal/feedfetch"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	_ "net/http/pprof"
 )
 
 const defaultPort = "8080"

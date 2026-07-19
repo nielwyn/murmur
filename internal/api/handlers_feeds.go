@@ -5,19 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/service"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
 )
-
-const pgUniqueViolation = "23505"
-
-// Reports whether err is a Postgres unique-constraint violation.
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation
-}
 
 type feedResponse struct {
 	ID          uuid.UUID `json:"id"`
@@ -62,13 +53,9 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feed, err := s.db.CreateFeed(r.Context(), database.CreateFeedParams{
-		Name:   req.Name,
-		Url:    req.Url,
-		UserID: user.ID,
-	})
+	feed, err := s.svc.CreateFeed(r.Context(), user.ID, req.Name, req.Url)
 	if err != nil {
-		if isUniqueViolation(err) {
+		if errors.Is(err, service.ErrFeedExists) {
 			respondError(w, http.StatusConflict, "a feed with this url already exists")
 			return
 		}
@@ -104,10 +91,7 @@ func (s *Server) handleFollowFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	follow, err := s.db.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feedID,
-	})
+	follow, err := s.svc.FollowFeed(r.Context(), user.ID, feedID)
 	if err != nil {
 		respondError(w, http.StatusConflict, "could not follow feed")
 		return
@@ -125,16 +109,12 @@ func (s *Server) handleUnfollowFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := s.db.DeleteFeedFollow(r.Context(), database.DeleteFeedFollowParams{
-		UserID: user.ID,
-		FeedID: feedID,
-	})
-	if err != nil {
+	if err := s.svc.UnfollowFeed(r.Context(), user.ID, feedID); err != nil {
+		if errors.Is(err, service.ErrNotFollowing) {
+			respondError(w, http.StatusNotFound, "not following this feed")
+			return
+		}
 		respondError(w, http.StatusInternalServerError, "could not unfollow feed")
-		return
-	}
-	if rows == 0 {
-		respondError(w, http.StatusNotFound, "not following this feed")
 		return
 	}
 

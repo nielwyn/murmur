@@ -5,15 +5,17 @@ import (
 
 	"github.com/nielwyn/murmur/internal/config"
 	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/service"
 )
 
 type Server struct {
 	db  *database.Queries
 	cfg *config.Config
+	svc *service.Service
 }
 
 func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
-	s := &Server{db: db, cfg: cfg}
+	s := &Server{db: db, cfg: cfg, svc: service.New(db)}
 
 	mux := http.NewServeMux()
 
