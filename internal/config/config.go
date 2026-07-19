@@ -10,9 +10,7 @@ const configFileName = ".murmurconfig.json"
 
 type Config struct {
 	DBUrl           string `json:"db_url"`
-	APIURL          string `json:"api_url"`
 	CurrentUsername string `json:"current_username"`
-	AuthToken       string `json:"auth_token"`
 	JWTSecret       string `json:"jwt_secret"`
 	Secure          bool   `json:"secure"`
 }
@@ -39,10 +37,8 @@ func Read() (Config, error) {
 	return cfg, nil
 }
 
-// SetSession persists the logged-in username and API session token.
-func (c *Config) SetSession(username, token string) error {
-	c.CurrentUsername = username
-	c.AuthToken = token
+func (c *Config) SetUser(name string) error {
+	c.CurrentUsername = name
 	return write(*c)
 }
 
@@ -69,7 +65,6 @@ func getConfigFilePath() (string, error) {
 func defaultConfig() Config {
 	return Config{
 		DBUrl:     "postgres://murmur:murmur@localhost:5432/murmur?sslmode=disable",
-		APIURL:    "http://localhost:8080",
 		JWTSecret: "murmur-dev-secret-change-me",
 	}
 }

@@ -1,15 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/nielwyn/murmur/internal/config"
+	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/service"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type state struct {
-	cfg    *config.Config
-	client *apiClient
+	cfg *config.Config
+	db  *database.Queries
+	svc *service.Service
 }
 
 type command struct {
@@ -45,9 +51,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	pool, err := pgxpool.New(context.Background(), cfg.DBUrl)
+	if err != nil {
+		fmt.Println("error connecting to database:", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	db := database.New(pool)
 	s := &state{
-		cfg:    &cfg,
-		client: newAPIClient(cfg.APIURL, cfg.AuthToken),
+		cfg: &cfg,
+		db:  db,
+		svc: service.New(db),
 	}
 
 	cmds := commands{handlers: map[string]func(command) error{}}
@@ -55,11 +70,12 @@ func main() {
 	cmds.register("register", s.handleRegister)
 	cmds.register("login", s.handleLogin)
 
-	cmds.register("feeds", s.requireAuth(s.handleListFeeds))
+	cmds.register("feeds", s.handleListFeeds)
 	cmds.register("addfeed", s.requireAuth(s.handleCreateFeed))
 	cmds.register("following", s.requireAuth(s.handleListFollowing))
 	cmds.register("follow", s.requireAuth(s.handleFollowFeed))
 	cmds.register("unfollow", s.requireAuth(s.handleUnfollowFeed))
+	cmds.register("browse", s.requireAuth(s.handleListPosts))
 
 	cmd := command{name: os.Args[1], args: os.Args[2:]}
 	if err := cmds.run(cmd); err != nil {

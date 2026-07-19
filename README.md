@@ -66,8 +66,7 @@ goose -dir sql/schema postgres "postgres://murmur:murmur@localhost:5432/murmur?s
 
 # 3. Configure (~/.murmurconfig.json)
 #    { "db_url": "postgres://murmur:murmur@localhost:5432/murmur?sslmode=disable",
-#      "jwt_secret": "change-me",
-#      "api_url": "http://localhost:8080" }
+#      "jwt_secret": "change-me" }
 
 # 4. Run the API server (port 8080, override with MURMUR_PORT)
 go run ./cmd/apiserver
@@ -77,9 +76,10 @@ cd web && npm install && npm run dev
 ```
 
 There's also a CLI (`go run ./cmd/murmurcli`) with `register`, `login`,
-`addfeed`, `follow`, `unfollow`, and `following`. It's a thin HTTP client of
-the same API the web frontend uses — `db_url` is only read by `apiserver`;
-the CLI just needs `api_url` and a running server.
+`addfeed`, `follow`, `unfollow`, `following`, and `browse`. It talks to the
+database directly through the same `internal/service` logic as the API
+server, so it works without the server running — an admin tool for the box
+the database lives on, not a second frontend.
 
 ## Roadmap
 

@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/nielwyn/murmur/internal/service"
 )
 
 func (s *state) handleRegister(cmd command) error {
@@ -11,13 +14,13 @@ func (s *state) handleRegister(cmd command) error {
 	}
 	username, email, password := cmd.args[0], cmd.args[1], cmd.args[2]
 
-	user, token, err := s.client.Register(context.Background(), username, email, password)
+	user, err := s.svc.Register(context.Background(), username, email, password)
 	if err != nil {
 		return fmt.Errorf("creating user: %w", err)
 	}
 
-	if err := s.cfg.SetSession(user.Username, token); err != nil {
-		return fmt.Errorf("saving session: %w", err)
+	if err := s.cfg.SetUser(user.Username); err != nil {
+		return fmt.Errorf("saving current user: %w", err)
 	}
 
 	fmt.Printf("User %q created and logged in\n", user.Username)
@@ -30,13 +33,16 @@ func (s *state) handleLogin(cmd command) error {
 	}
 	username, password := cmd.args[0], cmd.args[1]
 
-	user, token, err := s.client.Login(context.Background(), username, password)
+	user, err := s.svc.Login(context.Background(), username, password)
 	if err != nil {
-		return fmt.Errorf("login failed: %w", err)
+		if errors.Is(err, service.ErrUserNotFound) {
+			return fmt.Errorf("username %q not found", username)
+		}
+		return fmt.Errorf("invalid password")
 	}
 
-	if err := s.cfg.SetSession(user.Username, token); err != nil {
-		return fmt.Errorf("saving session: %w", err)
+	if err := s.cfg.SetUser(user.Username); err != nil {
+		return fmt.Errorf("saving current user: %w", err)
 	}
 
 	fmt.Printf("Logged in as %q\n", user.Username)
