@@ -9,10 +9,9 @@ import (
 const configFileName = ".murmurconfig.json"
 
 type Config struct {
-	DBUrl           string `json:"db_url"`
-	CurrentUsername string `json:"current_username"`
-	JWTSecret       string `json:"jwt_secret"`
-	Secure          bool   `json:"secure"`
+	DBUrl     string `json:"db_url"`
+	JWTSecret string `json:"jwt_secret"`
+	Secure    bool   `json:"secure"`
 }
 
 func Read() (Config, error) {
@@ -35,23 +34,6 @@ func Read() (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
-}
-
-func (c *Config) SetUser(name string) error {
-	c.CurrentUsername = name
-	return write(*c)
-}
-
-func write(cfg Config) error {
-	path, err := getConfigFilePath()
-	if err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
 }
 
 func getConfigFilePath() (string, error) {

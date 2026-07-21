@@ -35,7 +35,7 @@ background fetcher are done; the posts/reading UI is next. See
 
 | Layer     | Choice                                            |
 | --------- | ------------------------------------------------- |
-| Backend   | Go (stdlib `net/http`), two binaries: API server + CLI |
+| Backend   | Go (stdlib `net/http`)                            |
 | Database  | PostgreSQL — sqlc, pgx/v5, goose migrations       |
 | Auth      | bcrypt + JWT in httpOnly cookie                   |
 | Frontend  | Svelte 5 (runes) + Vite SPA, dev proxy to the API |
@@ -75,15 +75,9 @@ go run ./cmd/apiserver
 cd web && npm install && npm run dev
 ```
 
-There's also a CLI (`go run ./cmd/murmurcli`) with `register`, `login`,
-`addfeed`, `follow`, `unfollow`, `following`, and `browse`. It talks to the
-database directly through the same `internal/service` logic as the API
-server, so it works without the server running — an admin tool for the box
-the database lives on, not a second frontend.
-
 ## Roadmap
 
-- [x] CLI, auth, feeds/follows REST API
+- [x] Auth, feeds/follows REST API
 - [x] Concurrent fetcher: scheduler + bounded worker pool + graceful shutdown
 - [x] Svelte frontend: auth + feed management
 - [ ] Fetch-status endpoint (`RWMutex` status map) + per-host rate limiting

@@ -5,17 +5,15 @@ import (
 
 	"github.com/nielwyn/murmur/internal/config"
 	"github.com/nielwyn/murmur/internal/database"
-	"github.com/nielwyn/murmur/internal/service"
 )
 
 type Server struct {
 	db  *database.Queries
 	cfg *config.Config
-	svc *service.Service
 }
 
 func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
-	s := &Server{db: db, cfg: cfg, svc: service.New(db)}
+	s := &Server{db: db, cfg: cfg}
 
 	mux := http.NewServeMux()
 
@@ -30,6 +28,8 @@ func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
 	mux.HandleFunc("GET /api/feeds/following", s.requireAuth(s.handleListFollowing))
 	mux.HandleFunc("POST /api/feeds/{id}/follow", s.requireAuth(s.handleFollowFeed))
 	mux.HandleFunc("DELETE /api/feeds/{id}/follow", s.requireAuth(s.handleUnfollowFeed))
+
+	mux.HandleFunc("GET /api/posts/{id}", s.requireAuth(s.handleListPosts))
 
 	return recoverer(logger(mux))
 }
