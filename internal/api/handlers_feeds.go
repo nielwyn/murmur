@@ -1,16 +1,15 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
-	"html"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/nielwyn/murmur/internal/database"
-	"github.com/nielwyn/murmur/internal/rssfeed"
+	"github.com/nielwyn/murmur/internal/feedfetch"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -71,20 +70,15 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 	fetchCtx, cancel := context.WithTimeout(r.Context(), createFeedFetchTimeout)
 	defer cancel()
 
-	rss, err := rssfeed.Fetch(fetchCtx, req.Url)
+	fetchedFeed, err := feedfetch.Fetch(fetchCtx, req.Url)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "could not fetch a feed at that url")
 		return
 	}
-	name := strings.TrimSpace(html.UnescapeString(rss.Channel.Title))
-	if name == "" {
-		respondError(w, http.StatusBadRequest, "feed has no title")
-		return
-	}
 
 	feed, err := s.db.CreateFeed(r.Context(), database.CreateFeedParams{
-		Name:   name,
-		Url:    req.Url,
+		Name:   fetchedFeed.Title,
+		Url:    cmp.Or(fetchedFeed.FeedLink, req.Url),
 		UserID: user.ID,
 	})
 	if err != nil {

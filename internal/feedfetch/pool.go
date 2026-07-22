@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/nielwyn/murmur/internal/database"
-	"github.com/nielwyn/murmur/internal/rssfeed"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/microcosm-cc/bluemonday"
@@ -43,24 +42,18 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 	fetchCtx, cancel := context.WithTimeout(ctx, s.cfg.FetchTimeout)
 	defer cancel()
 
-	rss, err := rssfeed.Fetch(fetchCtx, feed.Url)
+	fetchedFeed, err := Fetch(fetchCtx, feed.Url)
 	if err != nil {
 		return FetchResult{Feed: feed, Duration: time.Since(start), Err: fmt.Errorf("fetching feed: %w", err)}
 	}
 
 	newPosts := 0
-	for _, item := range rss.Channel.Items {
+	for _, item := range fetchedFeed.Items {
 		if item.Link == "" {
 			continue
 		}
-
-		var publishedAt pgtype.Timestamp
-		if t, err := rssfeed.ParseDate(item.PubDate); err == nil {
-			publishedAt = pgtype.Timestamp{Time: t, Valid: true}
-		}
-
+		var publishedAt = pgtype.Timestamp{Time: *item.PublishedParsed, Valid: true}
 		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
-
 		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
 			Url:         item.Link,
