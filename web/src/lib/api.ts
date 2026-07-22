@@ -20,6 +20,16 @@ export interface Follow {
   feed_url?: string;
 }
 
+export interface Post {
+  id: string;
+  feed_name: string;
+  published_at?: string;
+  title: string;
+  url: string;
+  description?: string;
+  read?: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -81,4 +91,6 @@ export const api = {
 
   unfollowFeed: (feedId: string) =>
     request<void>(`/api/feeds/${feedId}/follow`, { method: "DELETE" }),
+
+  listPosts: () => request<Post[]>("/api/posts/"),
 };

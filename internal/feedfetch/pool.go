@@ -12,7 +12,10 @@ import (
 	"github.com/nielwyn/murmur/internal/rssfeed"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/microcosm-cc/bluemonday"
 )
+
+var descriptionPolicy = bluemonday.UGCPolicy()
 
 // worker pulls jobs until the channel is closed, sending one FetchResult per
 // job to results. Running several of these concurrently is the fan-out half
@@ -52,7 +55,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 			publishedAt = pgtype.Timestamp{Time: t, Valid: true}
 		}
 
-		description := strings.TrimSpace(html.UnescapeString(item.Description))
+		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
 
 		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),

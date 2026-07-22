@@ -1,179 +1,87 @@
 <script lang="ts">
     import { fade } from "svelte/transition";
+    import { api, ApiError, type Post } from "./api";
 
-    // Replace with GET /api/posts (+ POST/DELETE
-    // /api/posts/{id}/read) and delete these constants.
-    interface Post {
-        id: number;
-        feed: string;
-        day: string;
-        time: string;
-        title: string;
-        url: string;
-        desc: string;
-        read: boolean;
+    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+    function dayLabel(iso?: string): string {
+        if (!iso) return "undated";
+        const date = new Date(iso);
+        const startOfDay = (d: Date) =>
+            new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const diffDays = Math.round(
+            (startOfDay(new Date()) - startOfDay(date)) / 86400000,
+        );
+        if (diffDays === 0) return "today";
+        if (diffDays === 1) return "yesterday";
+        return date
+            .toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+            })
+            .toLowerCase();
     }
 
-    const DUMMY_POSTS: Post[] = [
-        {
-            id: 1,
-            feed: "the go blog",
-            day: "today",
-            time: "2h ago",
-            title: "Go 1.27 is released",
-            url: "https://go.dev/blog/",
-            desc: "Go 1.27 brings faster build times, new iterator helpers in the slices package, and improvements to the garbage collector on arm64.",
-            read: false,
-        },
-        {
-            id: 2,
-            feed: "hacker news",
-            day: "today",
-            time: "3h ago",
-            title: "SQLite as an application file format (2014)",
-            url: "https://news.ycombinator.com/",
-            desc: "Instead of inventing a custom binary format, treat a SQLite database file as your document format — transactional, queryable, and portable.",
-            read: false,
-        },
-        {
-            id: 3,
-            feed: "julia evans",
-            day: "today",
-            time: "5h ago",
-            title: "Notes on debugging DNS",
-            url: "https://jvns.ca/",
-            desc: "Some ways DNS can fail quietly, why the resolver cache is usually the culprit, and the three dig commands that answer 90% of questions.",
-            read: false,
-        },
-        {
-            id: 4,
-            feed: "boot.dev blog",
-            day: "today",
-            time: "7h ago",
-            title: "The bcrypt cost factor you actually want in 2026",
-            url: "https://blog.boot.dev/",
-            desc: "Password hashing needs to be slow on purpose. Here's how to pick a cost factor that survives modern GPUs without making login feel broken.",
-            read: true,
-        },
-        {
-            id: 5,
-            feed: "hacker news",
-            day: "today",
-            time: "9h ago",
-            title: "Show HN: I built an RSS reader that runs on a Raspberry Pi",
-            url: "https://news.ycombinator.com/",
-            desc: "One Go binary, embedded frontend, Postgres in a container. Fetches feeds with a bounded worker pool so the Pi never breaks a sweat.",
-            read: false,
-        },
-        {
-            id: 6,
-            feed: "arch linux news",
-            day: "yesterday",
-            time: "21:40",
-            title: "linux-firmware ≥ 20260701 requires manual intervention",
-            url: "https://archlinux.org/news/",
-            desc: "The package split changed file ownership. Run the documented pacman command before your next system upgrade to avoid a conflict.",
-            read: true,
-        },
-        {
-            id: 7,
-            feed: "the go blog",
-            day: "yesterday",
-            time: "16:05",
-            title: "Robust generic collections with iter.Seq",
-            url: "https://go.dev/blog/",
-            desc: "Patterns for writing collections that expose iterators instead of slices — and why returning iter.Seq keeps your API flexible.",
-            read: false,
-        },
-        {
-            id: 8,
-            feed: "hacker news",
-            day: "yesterday",
-            time: "11:12",
-            title: "The fan-out/fan-in pattern, benchmarked",
-            url: "https://news.ycombinator.com/",
-            desc: "How many workers is too many? Measuring throughput of a bounded worker pool against unbounded goroutines across I/O-heavy workloads.",
-            read: true,
-        },
-        {
-            id: 9,
-            feed: "julia evans",
-            day: "yesterday",
-            time: "09:14",
-            title: "New zine: How Containers Work!",
-            url: "https://jvns.ca/",
-            desc: "Namespaces, cgroups, and overlay filesystems explained with drawings — everything a container is, in 28 pages.",
-            read: true,
-        },
-        {
-            id: 10,
-            feed: "boot.dev blog",
-            day: "monday, july 14",
-            time: "19:30",
-            title: "Goroutines vs. threads: what actually happens in the scheduler",
-            url: "https://blog.boot.dev/",
-            desc: "M:N scheduling in plain words: why goroutines are cheap, what parks them, and what GOMAXPROCS really controls.",
-            read: false,
-        },
-        {
-            id: 11,
-            feed: "hacker news",
-            day: "monday, july 14",
-            time: "14:02",
-            title: "Miniflux 3.0 released",
-            url: "https://news.ycombinator.com/",
-            desc: "The minimalist feed reader gets keyboard-first navigation, a smaller Docker image, and OPML import improvements.",
-            read: true,
-        },
-        {
-            id: 12,
-            feed: "arch linux news",
-            day: "monday, july 14",
-            time: "08:47",
-            title: "PostgreSQL 18 moves to extra",
-            url: "https://archlinux.org/news/",
-            desc: "The new major version is now in the main repos. Remember: pg_upgrade before the old binaries are gone.",
-            read: true,
-        },
-    ];
+    function timeAgo(iso?: string): string {
+        if (!iso) return "";
+        const diffSec = (new Date(iso).getTime() - Date.now()) / 1000;
+        const units: [Intl.RelativeTimeFormatUnit, number][] = [
+            ["year", 31536000],
+            ["month", 2592000],
+            ["day", 86400],
+            ["hour", 3600],
+            ["minute", 60],
+            ["second", 1],
+        ];
+        for (const [unit, secs] of units) {
+            if (Math.abs(diffSec) >= secs || unit === "second") {
+                return rtf.format(Math.round(diffSec / secs), unit);
+            }
+        }
+        return "";
+    }
 
     // One extra "page" so the pagination button has something to load.
     const OLDER_PAGE: Post[] = [
         {
-            id: 13,
-            feed: "the go blog",
-            day: "sunday, july 13",
-            time: "17:25",
+            id: "13",
+            feed_name: "the go blog",
+            published_at: "2026-07-13T17:25:00Z",
             title: "Profile-guided optimization, two years in",
             url: "https://go.dev/blog/",
-            desc: "What PGO has delivered since 1.21, real-world numbers from large deployments, and how to start collecting profiles today.",
+            description:
+                "What PGO has delivered since 1.21, real-world numbers from large deployments, and how to start collecting profiles today.",
             read: true,
         },
         {
-            id: 14,
-            feed: "hacker news",
-            day: "sunday, july 13",
-            time: "10:58",
+            id: "14",
+            feed_name: "hacker news",
+            published_at: "2026-07-13T10:58:00Z",
             title: "Ask HN: What's your self-hosting stack in 2026?",
             url: "https://news.ycombinator.com/",
-            desc: "Raspberry Pis, mini PCs, and old laptops. Docker Compose still rules, and everyone has an RSS reader in the list somewhere.",
+            description:
+                "Raspberry Pis, mini PCs, and old laptops. Docker Compose still rules, and everyone has an RSS reader in the list somewhere.",
             read: true,
         },
     ];
 
-    let posts: Post[] = $state([...DUMMY_POSTS]);
+    let posts: Post[] = $state([]);
     let filter: "all" | "unread" = $state("all");
     let olderLoaded = $state(false);
     let ended = $state(false);
+    let loading = $state(true);
+    let error = $state("");
 
     const visible = $derived(posts.filter((p) => filter === "all" || !p.read));
     const unreadTotal = $derived(posts.filter((p) => !p.read).length);
     const groups = $derived.by(() => {
         const days: { day: string; items: Post[] }[] = [];
         for (const p of visible) {
-            let g = days.find((d) => d.day === p.day);
+            const label = dayLabel(p.published_at);
+            let g = days.find((d) => d.day === label);
             if (!g) {
-                g = { day: p.day, items: [] };
+                g = { day: label, items: [] };
                 days.push(g);
             }
             g.items.push(p);
@@ -201,6 +109,20 @@
             olderLoaded = true;
         }
     }
+
+    async function load() {
+        loading = true;
+        error = "";
+        try {
+            posts = await api.listPosts();
+        } catch (e) {
+            error = e instanceof ApiError ? e.message : "could not load posts";
+        } finally {
+            loading = false;
+        }
+    }
+
+    load();
 </script>
 
 <div class="toolbar">
@@ -255,7 +177,7 @@
                     >
                         <div class="post-meta">
                             <span class="post-source section-label">
-                                {post.feed} · {post.time}
+                                {post.feed_name} · {timeAgo(post.published_at)}
                             </span>
                             <button
                                 class="read-toggle"
@@ -268,7 +190,6 @@
                             </button>
                         </div>
                         <h3 class="post-title display">
-                            <!-- Opening an article marks it read. -->
                             <a
                                 href={post.url}
                                 target="_blank"
@@ -278,8 +199,8 @@
                                 {post.title}
                             </a>
                         </h3>
-                        {#if post.desc}
-                            <p class="post-desc">{post.desc}</p>
+                        {#if post.description}
+                            <p class="post-desc">{@html post.description}</p>
                         {/if}
                     </li>
                 {/each}
