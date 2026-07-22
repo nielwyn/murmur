@@ -1,15 +1,22 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"html"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/internal/rssfeed"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )
+
+const createFeedFetchTimeout = 10 * time.Second
 
 const pgUniqueViolation = "23505"
 
@@ -50,20 +57,33 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 	user := userFromContext(r)
 
 	var req struct {
-		Name string `json:"name"`
-		Url  string `json:"url"`
+		Url string `json:"url"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Name == "" || req.Url == "" {
-		respondError(w, http.StatusBadRequest, "name and url are required")
+	if req.Url == "" {
+		respondError(w, http.StatusBadRequest, "url is required")
+		return
+	}
+
+	fetchCtx, cancel := context.WithTimeout(r.Context(), createFeedFetchTimeout)
+	defer cancel()
+
+	rss, err := rssfeed.Fetch(fetchCtx, req.Url)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "could not fetch a feed at that url")
+		return
+	}
+	name := strings.TrimSpace(html.UnescapeString(rss.Channel.Title))
+	if name == "" {
+		respondError(w, http.StatusBadRequest, "feed has no title")
 		return
 	}
 
 	feed, err := s.db.CreateFeed(r.Context(), database.CreateFeedParams{
-		Name:   req.Name,
+		Name:   name,
 		Url:    req.Url,
 		UserID: user.ID,
 	})

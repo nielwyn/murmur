@@ -6,7 +6,6 @@
     let loading = $state(true);
     let error = $state("");
 
-    let name = $state("");
     let url = $state("");
     let adding = $state(false);
 
@@ -33,9 +32,8 @@
         adding = true;
         try {
             // Create the feed, then follow it — two separate endpoints.
-            const feed = await api.createFeed(name, url);
+            const feed = await api.createFeed(url);
             await api.followFeed(feed.id);
-            name = "";
             url = "";
             await load();
         } catch (e) {
@@ -71,7 +69,6 @@
         <!-- svelte-ignore a11y_no_redundant_roles -- Pico CSS styles the
              group via the [role=group] selector, not the fieldset itself. -->
         <fieldset role="group">
-            <input placeholder="name" bind:value={name} required />
             <input
                 type="url"
                 placeholder="https://example.com/rss"

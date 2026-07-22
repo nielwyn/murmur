@@ -78,10 +78,10 @@ export const api = {
 
   listFeeds: () => request<Feed[]>("/api/feeds"),
 
-  createFeed: (name: string, url: string) =>
+  createFeed: (url: string) =>
     request<Feed>("/api/feeds", {
       method: "POST",
-      body: JSON.stringify({ name, url }),
+      body: JSON.stringify({ url }),
     }),
 
   listFollowing: () => request<Follow[]>("/api/feeds/following"),
