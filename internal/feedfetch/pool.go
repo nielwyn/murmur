@@ -15,7 +15,11 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 )
 
-var descriptionPolicy = bluemonday.UGCPolicy()
+var descriptionPolicy = func() *bluemonday.Policy {
+	p := bluemonday.UGCPolicy()
+	p.AddTargetBlankToFullyQualifiedLinks(true)
+	return p
+}()
 
 // worker pulls jobs until the channel is closed, sending one FetchResult per
 // job to results. Running several of these concurrently is the fan-out half
