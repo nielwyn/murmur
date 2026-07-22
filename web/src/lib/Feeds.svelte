@@ -68,6 +68,8 @@
 <section>
     <h2 class="section-label">add a feed</h2>
     <form onsubmit={addFeed}>
+        <!-- svelte-ignore a11y_no_redundant_roles -- Pico CSS styles the
+             group via the [role=group] selector, not the fieldset itself. -->
         <fieldset role="group">
             <input placeholder="name" bind:value={name} required />
             <input
@@ -109,11 +111,9 @@
                     <div class="feed-info">
                         <strong class="display feed-name">{feed.name}</strong>
                         <span class="feed-meta section-label">
-                            <a
-                                href={feed.url}
-                                target="_blank"
-                                rel="noreferrer">{feed.url}</a
-                            >
+                            <a href={feed.url} target="_blank" rel="noreferrer">
+                                {feed.url}
+                            </a>
                             {#if feed.creator_name}
                                 · added by {feed.creator_name}
                             {/if}
