@@ -12,11 +12,11 @@ import (
 type postsResponse struct {
 	ID          uuid.UUID  `json:"id"`
 	Title       string     `json:"title"`
-	URL         string     `json:"url"`
+	Link        string     `json:"link"`
 	Description *string    `json:"description,omitempty"`
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 	FeedID      uuid.UUID  `json:"feed_id"`
-	FeedName    string     `json:"feed_name"`
+	FeedTitle   string     `json:"feed_title"`
 }
 
 const (
@@ -58,11 +58,11 @@ func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
 		resp[i] = postsResponse{
 			ID:          p.ID,
 			Title:       p.Title,
-			URL:         p.Url,
+			Link:        p.Link,
 			Description: p.Description,
 			PublishedAt: publishedAt,
 			FeedID:      p.FeedID,
-			FeedName:    p.FeedName,
+			FeedTitle:   p.FeedTitle,
 		}
 	}
 	respondJSON(w, http.StatusOK, resp)

@@ -46,20 +46,20 @@
     const OLDER_PAGE: Post[] = [
         {
             id: "13",
-            feed_name: "the go blog",
+            feed_title: "the go blog",
             published_at: "2026-07-13T17:25:00Z",
             title: "Profile-guided optimization, two years in",
-            url: "https://go.dev/blog/",
+            link: "https://go.dev/blog/",
             description:
                 "What PGO has delivered since 1.21, real-world numbers from large deployments, and how to start collecting profiles today.",
             read: true,
         },
         {
             id: "14",
-            feed_name: "hacker news",
+            feed_title: "hacker news",
             published_at: "2026-07-13T10:58:00Z",
             title: "Ask HN: What's your self-hosting stack in 2026?",
-            url: "https://news.ycombinator.com/",
+            link: "https://news.ycombinator.com/",
             description:
                 "Raspberry Pis, mini PCs, and old laptops. Docker Compose still rules, and everyone has an RSS reader in the list somewhere.",
             read: true,
@@ -177,7 +177,7 @@
                     >
                         <div class="post-meta">
                             <span class="post-source section-label">
-                                {post.feed_name} · {timeAgo(post.published_at)}
+                                {post.feed_title} · {timeAgo(post.published_at)}
                             </span>
                             <button
                                 class="read-toggle"
@@ -191,7 +191,7 @@
                         </div>
                         <h3 class="post-title display">
                             <a
-                                href={post.url}
+                                href={post.link}
                                 target="_blank"
                                 rel="noreferrer"
                                 onclick={() => setRead(post, true)}

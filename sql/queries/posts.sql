@@ -1,13 +1,13 @@
 -- name: CreatePost :execrows
-INSERT INTO posts (title, url, description, published_at, feed_id)
+INSERT INTO posts (title, link, description, published_at, feed_id)
     VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (url)
+ON CONFLICT (link)
     DO NOTHING;
 
 -- name: GetPostsForUser :many
 SELECT
     posts.*,
-    feeds.name AS feed_name
+    feeds.title AS feed_title
 FROM
     posts
     JOIN feed_follows ON feed_follows.feed_id = posts.feed_id

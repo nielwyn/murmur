@@ -1,16 +1,16 @@
 -- name: CreateFeed :one
-INSERT INTO feeds (name, url, user_id)
+INSERT INTO feeds (title, link, user_id)
     VALUES ($1, $2, $3)
 RETURNING
     *;
 
--- name: GetFeedByURL :one
+-- name: GetFeedByLink :one
 SELECT
     *
 FROM
     feeds
 WHERE
-    url = $1;
+    link = $1;
 
 -- name: GetFeeds :many
 SELECT

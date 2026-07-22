@@ -59,8 +59,8 @@ func (q *Queries) DeleteFeedFollow(ctx context.Context, arg DeleteFeedFollowPara
 const getFeedFollowsForUser = `-- name: GetFeedFollowsForUser :many
 SELECT
     feed_follows.id, feed_follows.created_at, feed_follows.updated_at, feed_follows.user_id, feed_follows.feed_id,
-    feeds.name AS feed_name,
-    feeds.url AS feed_url
+    feeds.title AS feed_title,
+    feeds.link AS feed_link
 FROM
     feed_follows
     JOIN feeds ON feed_follows.feed_id = feeds.id
@@ -76,8 +76,8 @@ type GetFeedFollowsForUserRow struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 	UserID    uuid.UUID        `json:"user_id"`
 	FeedID    uuid.UUID        `json:"feed_id"`
-	FeedName  string           `json:"feed_name"`
-	FeedUrl   string           `json:"feed_url"`
+	FeedTitle string           `json:"feed_title"`
+	FeedLink  string           `json:"feed_link"`
 }
 
 func (q *Queries) GetFeedFollowsForUser(ctx context.Context, userID uuid.UUID) ([]GetFeedFollowsForUserRow, error) {
@@ -95,8 +95,8 @@ func (q *Queries) GetFeedFollowsForUser(ctx context.Context, userID uuid.UUID) (
 			&i.UpdatedAt,
 			&i.UserID,
 			&i.FeedID,
-			&i.FeedName,
-			&i.FeedUrl,
+			&i.FeedTitle,
+			&i.FeedLink,
 		); err != nil {
 			return nil, err
 		}

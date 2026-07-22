@@ -7,8 +7,8 @@ RETURNING
 -- name: GetFeedFollowsForUser :many
 SELECT
     feed_follows.*,
-    feeds.name AS feed_name,
-    feeds.url AS feed_url
+    feeds.title AS feed_title,
+    feeds.link AS feed_link
 FROM
     feed_follows
     JOIN feeds ON feed_follows.feed_id = feeds.id

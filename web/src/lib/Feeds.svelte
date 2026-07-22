@@ -6,7 +6,7 @@
     let loading = $state(true);
     let error = $state("");
 
-    let url = $state("");
+    let link = $state("");
     let adding = $state(false);
 
     async function load() {
@@ -32,9 +32,9 @@
         adding = true;
         try {
             // Create the feed, then follow it — two separate endpoints.
-            const feed = await api.createFeed(url);
+            const feed = await api.createFeed(link);
             await api.followFeed(feed.id);
-            url = "";
+            link = "";
             await load();
         } catch (e) {
             error = e instanceof ApiError ? e.message : "could not add feed";
@@ -72,7 +72,7 @@
             <input
                 type="url"
                 placeholder="https://example.com/rss"
-                bind:value={url}
+                bind:value={link}
                 required
             />
             <button type="submit" aria-busy={adding}>Add</button>
@@ -106,10 +106,10 @@
             {#each feeds as feed (feed.id)}
                 <li>
                     <div class="feed-info">
-                        <strong class="display feed-name">{feed.name}</strong>
+                        <strong class="display feed-name">{feed.title}</strong>
                         <span class="feed-meta section-label">
-                            <a href={feed.url} target="_blank" rel="noreferrer">
-                                {feed.url}
+                            <a href={feed.link} target="_blank" rel="noreferrer">
+                                {feed.link}
                             </a>
                             {#if feed.creator_name}
                                 · added by {feed.creator_name}

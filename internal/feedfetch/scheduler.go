@@ -119,8 +119,8 @@ func (s *Scheduler) tick(ctx context.Context, jobs chan<- FetchJob) {
 
 func logResult(r FetchResult) {
 	if r.Err != nil {
-		log.Printf("feedfetch: %s: error: %v (%s)", r.Feed.Name, r.Err, r.Duration)
+		log.Printf("feedfetch: %s: error: %v (%s)", r.Feed.Title, r.Err, r.Duration)
 		return
 	}
-	log.Printf("feedfetch: %s: %d new post(s) (%s)", r.Feed.Name, r.NewPosts, r.Duration)
+	log.Printf("feedfetch: %s: %d new post(s) (%s)", r.Feed.Title, r.NewPosts, r.Duration)
 }

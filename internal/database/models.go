@@ -13,8 +13,8 @@ type Feed struct {
 	ID                   uuid.UUID        `json:"id"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
+	Title                string           `json:"title"`
+	Link                 string           `json:"link"`
 	UserID               uuid.UUID        `json:"user_id"`
 	LastFetchedAt        pgtype.Timestamp `json:"last_fetched_at"`
 	FetchIntervalSeconds int32            `json:"fetch_interval_seconds"`
@@ -33,7 +33,7 @@ type Post struct {
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 	Title       string           `json:"title"`
-	Url         string           `json:"url"`
+	Link        string           `json:"link"`
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`

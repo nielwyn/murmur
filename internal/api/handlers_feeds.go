@@ -27,15 +27,15 @@ func isUniqueViolation(err error) bool {
 
 type feedResponse struct {
 	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	URL         string    `json:"url"`
+	Title       string    `json:"title"`
+	Link        string    `json:"link"`
 	CreatorName string    `json:"creator_name,omitempty"`
 }
 
 type followResponse struct {
-	FeedID   uuid.UUID `json:"feed_id"`
-	FeedName string    `json:"feed_name,omitempty"`
-	FeedURL  string    `json:"feed_url,omitempty"`
+	FeedID    uuid.UUID `json:"feed_id"`
+	FeedTitle string    `json:"feed_title,omitempty"`
+	FeedLink  string    `json:"feed_link,omitempty"`
 }
 
 func (s *Server) handleListFeeds(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func (s *Server) handleListFeeds(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]feedResponse, len(feeds))
 	for i, f := range feeds {
-		resp[i] = feedResponse{ID: f.ID, Name: f.Name, URL: f.Url, CreatorName: f.CreatorName}
+		resp[i] = feedResponse{ID: f.ID, Title: f.Title, Link: f.Link, CreatorName: f.CreatorName}
 	}
 	respondJSON(w, http.StatusOK, resp)
 }
@@ -56,29 +56,29 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 	user := userFromContext(r)
 
 	var req struct {
-		Url string `json:"url"`
+		Link string `json:"link"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Url == "" {
-		respondError(w, http.StatusBadRequest, "url is required")
+	if req.Link == "" {
+		respondError(w, http.StatusBadRequest, "link is required")
 		return
 	}
 
 	fetchCtx, cancel := context.WithTimeout(r.Context(), createFeedFetchTimeout)
 	defer cancel()
 
-	fetchedFeed, err := feedfetch.Fetch(fetchCtx, req.Url)
+	fetchedFeed, err := feedfetch.Fetch(fetchCtx, req.Link)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "could not fetch a feed at that url")
 		return
 	}
 
 	feed, err := s.db.CreateFeed(r.Context(), database.CreateFeedParams{
-		Name:   fetchedFeed.Title,
-		Url:    cmp.Or(fetchedFeed.FeedLink, req.Url),
+		Title:  fetchedFeed.Title,
+		Link:   cmp.Or(fetchedFeed.FeedLink, req.Link),
 		UserID: user.ID,
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, feedResponse{ID: feed.ID, Name: feed.Name, URL: feed.Url})
+	respondJSON(w, http.StatusCreated, feedResponse{ID: feed.ID, Title: feed.Title, Link: feed.Link})
 }
 
 func (s *Server) handleListFollowing(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +104,7 @@ func (s *Server) handleListFollowing(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]followResponse, len(follows))
 	for i, f := range follows {
-		resp[i] = followResponse{FeedID: f.FeedID, FeedName: f.FeedName, FeedURL: f.FeedUrl}
+		resp[i] = followResponse{FeedID: f.FeedID, FeedTitle: f.FeedTitle, FeedLink: f.FeedLink}
 	}
 	respondJSON(w, http.StatusOK, resp)
 }

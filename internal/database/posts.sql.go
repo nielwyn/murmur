@@ -13,15 +13,15 @@ import (
 )
 
 const createPost = `-- name: CreatePost :execrows
-INSERT INTO posts (title, url, description, published_at, feed_id)
+INSERT INTO posts (title, link, description, published_at, feed_id)
     VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (url)
+ON CONFLICT (link)
     DO NOTHING
 `
 
 type CreatePostParams struct {
 	Title       string           `json:"title"`
-	Url         string           `json:"url"`
+	Link        string           `json:"link"`
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
@@ -30,7 +30,7 @@ type CreatePostParams struct {
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, error) {
 	result, err := q.db.Exec(ctx, createPost,
 		arg.Title,
-		arg.Url,
+		arg.Link,
 		arg.Description,
 		arg.PublishedAt,
 		arg.FeedID,
@@ -43,8 +43,8 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, 
 
 const getPostsForUser = `-- name: GetPostsForUser :many
 SELECT
-    posts.id, posts.created_at, posts.updated_at, posts.title, posts.url, posts.description, posts.published_at, posts.feed_id,
-    feeds.name AS feed_name
+    posts.id, posts.created_at, posts.updated_at, posts.title, posts.link, posts.description, posts.published_at, posts.feed_id,
+    feeds.title AS feed_title
 FROM
     posts
     JOIN feed_follows ON feed_follows.feed_id = posts.feed_id
@@ -66,11 +66,11 @@ type GetPostsForUserRow struct {
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 	Title       string           `json:"title"`
-	Url         string           `json:"url"`
+	Link        string           `json:"link"`
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
-	FeedName    string           `json:"feed_name"`
+	FeedTitle   string           `json:"feed_title"`
 }
 
 func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams) ([]GetPostsForUserRow, error) {
@@ -87,11 +87,11 @@ func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Title,
-			&i.Url,
+			&i.Link,
 			&i.Description,
 			&i.PublishedAt,
 			&i.FeedID,
-			&i.FeedName,
+			&i.FeedTitle,
 		); err != nil {
 			return nil, err
 		}

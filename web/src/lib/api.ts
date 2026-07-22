@@ -9,23 +9,23 @@ export interface User {
 
 export interface Feed {
   id: string;
-  name: string;
-  url: string;
+  title: string;
+  link: string;
   creator_name?: string;
 }
 
 export interface Follow {
   feed_id: string;
-  feed_name?: string;
-  feed_url?: string;
+  feed_title?: string;
+  feed_link?: string;
 }
 
 export interface Post {
   id: string;
-  feed_name: string;
+  feed_title: string;
   published_at?: string;
   title: string;
-  url: string;
+  link: string;
   description?: string;
   read?: boolean;
 }
@@ -78,10 +78,10 @@ export const api = {
 
   listFeeds: () => request<Feed[]>("/api/feeds"),
 
-  createFeed: (url: string) =>
+  createFeed: (link: string) =>
     request<Feed>("/api/feeds", {
       method: "POST",
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ link }),
     }),
 
   listFollowing: () => request<Follow[]>("/api/feeds/following"),

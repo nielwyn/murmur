@@ -13,27 +13,27 @@ import (
 )
 
 const createFeed = `-- name: CreateFeed :one
-INSERT INTO feeds (name, url, user_id)
+INSERT INTO feeds (title, link, user_id)
     VALUES ($1, $2, $3)
 RETURNING
-    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+    id, created_at, updated_at, title, link, user_id, last_fetched_at, fetch_interval_seconds
 `
 
 type CreateFeedParams struct {
-	Name   string    `json:"name"`
-	Url    string    `json:"url"`
+	Title  string    `json:"title"`
+	Link   string    `json:"link"`
 	UserID uuid.UUID `json:"user_id"`
 }
 
 func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
-	row := q.db.QueryRow(ctx, createFeed, arg.Name, arg.Url, arg.UserID)
+	row := q.db.QueryRow(ctx, createFeed, arg.Title, arg.Link, arg.UserID)
 	var i Feed
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Name,
-		&i.Url,
+		&i.Title,
+		&i.Link,
 		&i.UserID,
 		&i.LastFetchedAt,
 		&i.FetchIntervalSeconds,
@@ -41,24 +41,24 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 	return i, err
 }
 
-const getFeedByURL = `-- name: GetFeedByURL :one
+const getFeedByLink = `-- name: GetFeedByLink :one
 SELECT
-    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+    id, created_at, updated_at, title, link, user_id, last_fetched_at, fetch_interval_seconds
 FROM
     feeds
 WHERE
-    url = $1
+    link = $1
 `
 
-func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
-	row := q.db.QueryRow(ctx, getFeedByURL, url)
+func (q *Queries) GetFeedByLink(ctx context.Context, link string) (Feed, error) {
+	row := q.db.QueryRow(ctx, getFeedByLink, link)
 	var i Feed
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Name,
-		&i.Url,
+		&i.Title,
+		&i.Link,
 		&i.UserID,
 		&i.LastFetchedAt,
 		&i.FetchIntervalSeconds,
@@ -68,7 +68,7 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 
 const getFeeds = `-- name: GetFeeds :many
 SELECT
-    feeds.id, feeds.created_at, feeds.updated_at, feeds.name, feeds.url, feeds.user_id, feeds.last_fetched_at, feeds.fetch_interval_seconds,
+    feeds.id, feeds.created_at, feeds.updated_at, feeds.title, feeds.link, feeds.user_id, feeds.last_fetched_at, feeds.fetch_interval_seconds,
     users.username AS creator_name
 FROM
     feeds
@@ -81,8 +81,8 @@ type GetFeedsRow struct {
 	ID                   uuid.UUID        `json:"id"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
+	Title                string           `json:"title"`
+	Link                 string           `json:"link"`
 	UserID               uuid.UUID        `json:"user_id"`
 	LastFetchedAt        pgtype.Timestamp `json:"last_fetched_at"`
 	FetchIntervalSeconds int32            `json:"fetch_interval_seconds"`
@@ -102,8 +102,8 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Name,
-			&i.Url,
+			&i.Title,
+			&i.Link,
 			&i.UserID,
 			&i.LastFetchedAt,
 			&i.FetchIntervalSeconds,
@@ -121,7 +121,7 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 
 const getFeedsDueForFetch = `-- name: GetFeedsDueForFetch :many
 SELECT
-    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+    id, created_at, updated_at, title, link, user_id, last_fetched_at, fetch_interval_seconds
 FROM
     feeds
 WHERE
@@ -145,8 +145,8 @@ func (q *Queries) GetFeedsDueForFetch(ctx context.Context, limit int32) ([]Feed,
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Name,
-			&i.Url,
+			&i.Title,
+			&i.Link,
 			&i.UserID,
 			&i.LastFetchedAt,
 			&i.FetchIntervalSeconds,
@@ -170,7 +170,7 @@ SET
 WHERE
     id = $1
 RETURNING
-    id, created_at, updated_at, name, url, user_id, last_fetched_at, fetch_interval_seconds
+    id, created_at, updated_at, title, link, user_id, last_fetched_at, fetch_interval_seconds
 `
 
 func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) (Feed, error) {
@@ -180,8 +180,8 @@ func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) (Feed, erro
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Name,
-		&i.Url,
+		&i.Title,
+		&i.Link,
 		&i.UserID,
 		&i.LastFetchedAt,
 		&i.FetchIntervalSeconds,

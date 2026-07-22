@@ -42,7 +42,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 	fetchCtx, cancel := context.WithTimeout(ctx, s.cfg.FetchTimeout)
 	defer cancel()
 
-	fetchedFeed, err := Fetch(fetchCtx, feed.Url)
+	fetchedFeed, err := Fetch(fetchCtx, feed.Link)
 	if err != nil {
 		return FetchResult{Feed: feed, Duration: time.Since(start), Err: fmt.Errorf("fetching feed: %w", err)}
 	}
@@ -56,7 +56,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
 		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
-			Url:         item.Link,
+			Link:        item.Link,
 			Description: &description,
 			PublishedAt: publishedAt,
 			FeedID:      feed.ID,
