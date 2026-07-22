@@ -5,9 +5,24 @@
     import Posts from "./lib/Posts.svelte";
     import Status from "./lib/Status.svelte";
 
+    const VIEWS = ["posts", "feeds", "status"] as const;
+    type View = (typeof VIEWS)[number];
+    const VIEW_KEY = "murmur-view";
+
+    function loadView(): View {
+        const saved = localStorage.getItem(VIEW_KEY);
+        return saved && (VIEWS as readonly string[]).includes(saved)
+            ? (saved as View)
+            : "posts";
+    }
+
     let user: User | null = $state(null);
     let checking = $state(true);
-    let view: "posts" | "feeds" | "status" = $state("posts");
+    let view: View = $state(loadView());
+
+    $effect(() => {
+        localStorage.setItem(VIEW_KEY, view);
+    });
 
     const dateline = new Date()
         .toLocaleDateString("en-US", {
