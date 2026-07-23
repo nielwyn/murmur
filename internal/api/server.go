@@ -30,6 +30,8 @@ func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
 	mux.HandleFunc("DELETE /api/feeds/{id}/follow", s.requireAuth(s.handleUnfollowFeed))
 
 	mux.HandleFunc("GET /api/posts/", s.requireAuth(s.handleListPosts))
+	mux.HandleFunc("POST /api/posts/{id}/read", s.requireAuth(s.handleMarkPostRead))
+	mux.HandleFunc("DELETE /api/posts/{id}/read", s.requireAuth(s.handleMarkPostUnread))
 
 	return recoverer(logger(mux))
 }

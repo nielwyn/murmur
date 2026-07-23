@@ -93,12 +93,32 @@
         ? 0
         : 200;
 
-    function setRead(post: Post, read: boolean) {
+    async function setRead(post: Post, read: boolean) {
+        const previous = post.read;
         post.read = read;
+        try {
+            if (read) {
+                await api.markPostRead(post.id);
+            } else {
+                await api.markPostUnread(post.id);
+            }
+        } catch (e) {
+            post.read = previous;
+            error =
+                e instanceof ApiError ? e.message : "could not update read status";
+        }
     }
 
-    function markAllRead() {
-        posts.forEach((p) => (p.read = true));
+    async function markAllRead() {
+        const unread = posts.filter((p) => !p.read);
+        unread.forEach((p) => (p.read = true));
+        try {
+            await Promise.all(unread.map((p) => api.markPostRead(p.id)));
+        } catch (e) {
+            error =
+                e instanceof ApiError ? e.message : "could not mark all read";
+            await load();
+        }
     }
 
     function loadOlder() {

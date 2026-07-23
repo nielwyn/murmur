@@ -44,11 +44,14 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, 
 const getPostsForUser = `-- name: GetPostsForUser :many
 SELECT
     posts.id, posts.created_at, posts.updated_at, posts.title, posts.link, posts.description, posts.published_at, posts.feed_id,
-    feeds.title AS feed_title
+    feeds.title AS feed_title,
+    (post_reads.read_at IS NOT NULL)::boolean AS read
 FROM
     posts
     JOIN feed_follows ON feed_follows.feed_id = posts.feed_id
     JOIN feeds ON feeds.id = posts.feed_id
+    LEFT JOIN post_reads ON post_reads.post_id = posts.id
+        AND post_reads.user_id = $1
 WHERE
     feed_follows.user_id = $1
 ORDER BY
@@ -71,6 +74,7 @@ type GetPostsForUserRow struct {
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
 	FeedTitle   string           `json:"feed_title"`
+	Read        bool             `json:"read"`
 }
 
 func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams) ([]GetPostsForUserRow, error) {
@@ -92,6 +96,7 @@ func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams
 			&i.PublishedAt,
 			&i.FeedID,
 			&i.FeedTitle,
+			&i.Read,
 		); err != nil {
 			return nil, err
 		}
@@ -101,4 +106,37 @@ func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const markPostRead = `-- name: MarkPostRead :exec
+INSERT INTO post_reads (user_id, post_id)
+    VALUES ($1, $2)
+ON CONFLICT (user_id, post_id)
+    DO NOTHING
+`
+
+type MarkPostReadParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	PostID uuid.UUID `json:"post_id"`
+}
+
+func (q *Queries) MarkPostRead(ctx context.Context, arg MarkPostReadParams) error {
+	_, err := q.db.Exec(ctx, markPostRead, arg.UserID, arg.PostID)
+	return err
+}
+
+const markPostUnread = `-- name: MarkPostUnread :exec
+DELETE FROM post_reads
+WHERE user_id = $1
+    AND post_id = $2
+`
+
+type MarkPostUnreadParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	PostID uuid.UUID `json:"post_id"`
+}
+
+func (q *Queries) MarkPostUnread(ctx context.Context, arg MarkPostUnreadParams) error {
+	_, err := q.db.Exec(ctx, markPostUnread, arg.UserID, arg.PostID)
+	return err
 }

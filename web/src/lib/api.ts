@@ -27,7 +27,7 @@ export interface Post {
   title: string;
   link: string;
   description?: string;
-  read?: boolean;
+  read: boolean;
 }
 
 export class ApiError extends Error {
@@ -93,4 +93,10 @@ export const api = {
     request<void>(`/api/feeds/${feedId}/follow`, { method: "DELETE" }),
 
   listPosts: () => request<Post[]>("/api/posts/"),
+
+  markPostRead: (postId: string) =>
+    request<void>(`/api/posts/${postId}/read`, { method: "POST" }),
+
+  markPostUnread: (postId: string) =>
+    request<void>(`/api/posts/${postId}/read`, { method: "DELETE" }),
 };
