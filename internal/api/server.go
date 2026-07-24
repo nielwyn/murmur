@@ -20,6 +20,8 @@ func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
 	mux.HandleFunc("POST /api/register", s.handleRegister)
 	mux.HandleFunc("POST /api/login", s.handleLogin)
 	mux.HandleFunc("POST /api/logout", s.handleLogout)
+	mux.HandleFunc("GET /api/auth/google", s.handleGoogleLogin)
+	mux.HandleFunc("GET /api/auth/google/callback", s.handleGoogleCallback)
 
 	mux.HandleFunc("GET /api/me", s.requireAuth(s.handleMe))
 

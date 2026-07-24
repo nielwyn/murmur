@@ -16,13 +16,16 @@ import (
 	"github.com/nielwyn/murmur/internal/feedfetch"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 
 	_ "net/http/pprof"
 )
 
-const defaultPort = "8080"
-
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using process environment")
+	}
+
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
@@ -37,13 +40,8 @@ func main() {
 	db := database.New(pool)
 	handler := api.NewServer(db, &cfg)
 
-	port := os.Getenv("MURMUR_PORT")
-	if port == "" {
-		port = defaultPort
-	}
-
 	srv := &http.Server{
-		Addr:              ":" + port,
+		Addr:              ":" + cfg.Port,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
@@ -60,7 +58,7 @@ func main() {
 	})
 
 	go func() {
-		log.Printf("murmur api server listening on :%s", port)
+		log.Printf("murmur api server listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

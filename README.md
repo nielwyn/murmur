@@ -49,9 +49,14 @@ Requires Go 1.26+, Bun, and Docker (or a local Postgres).
 ```sh
 docker compose up -d
 goose -dir sql/schema postgres "postgres://user:pass@localhost:5432/murmur?sslmode=disable" up
+cp .env.example .env  # fill in DB_URL, JWT_SECRET, etc.
 go run ./cmd/apiserver
 cd web && bun install && bun run dev
 ```
+
+Config is entirely env-driven (loaded from `.env` via `godotenv`, or the
+process environment in production) — see `internal/config/config.go` for
+every variable and its default.
 
 ## Roadmap
 
@@ -60,5 +65,6 @@ cd web && bun install && bun run dev
 - [x] Svelte frontend: auth, feeds, posts
 - [ ] Read tracking + pagination
 - [ ] Fetch-status endpoint + per-host rate limiting
-- [ ] Structured logging, env-based config
+- [x] Env-based config
+- [ ] Structured logging (`log/slog`)
 - [ ] Single-binary deploy: embed frontend, Docker image

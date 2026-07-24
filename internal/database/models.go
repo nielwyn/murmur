@@ -51,5 +51,6 @@ type User struct {
 	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
 	Username       string           `json:"username"`
 	Email          string           `json:"email"`
-	HashedPassword string           `json:"hashed_password"`
+	HashedPassword *string          `json:"hashed_password"`
+	GoogleID       *string          `json:"google_id"`
 }

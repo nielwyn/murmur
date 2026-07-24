@@ -1,52 +1,40 @@
 package config
 
 import (
-	"encoding/json"
+	"cmp"
+	"errors"
 	"os"
-	"path/filepath"
+	"strconv"
 )
 
-const configFileName = ".murmurconfig.json"
-
 type Config struct {
-	DBUrl     string `json:"db_url"`
-	JWTSecret string `json:"jwt_secret"`
-	Secure    bool   `json:"secure"`
+	Port               string
+	DBUrl              string
+	JWTSecret          string
+	Secure             bool
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
+	FrontendURL        string
 }
 
 func Read() (Config, error) {
-	path, err := getConfigFilePath()
-	if err != nil {
-		return Config{}, err
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return Config{}, errors.New("JWT_SECRET environment variable is required")
 	}
 
-	file, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return defaultConfig(), nil
-		}
-		return Config{}, err
-	}
-	defer file.Close()
+	secure, _ := strconv.ParseBool(os.Getenv("SECURE"))
 
-	var cfg Config
-	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
-		return Config{}, err
-	}
-	return cfg, nil
-}
-
-func getConfigFilePath() (string, error) {
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, configFileName), nil
-}
-
-func defaultConfig() Config {
 	return Config{
-		DBUrl:     "postgres://murmur:murmur@localhost:5432/murmur?sslmode=disable",
-		JWTSecret: "murmur-dev-secret-change-me",
-	}
+		Port:      cmp.Or(os.Getenv("MURMUR_PORT"), "8080"),
+		DBUrl:     cmp.Or(os.Getenv("DB_URL"), "postgres://murmur:murmur@localhost:5432/murmur?sslmode=disable"),
+		JWTSecret: jwtSecret,
+		Secure:    secure,
+
+		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		GoogleRedirectURL:  cmp.Or(os.Getenv("GOOGLE_REDIRECT_URL"), "http://localhost:8080/api/auth/google/callback"),
+		FrontendURL:        cmp.Or(os.Getenv("FRONTEND_URL"), "http://localhost:5173"),
+	}, nil
 }

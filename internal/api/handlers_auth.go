@@ -56,7 +56,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	user, err := s.db.CreateUser(r.Context(), database.CreateUserParams{
 		Username:       req.Username,
 		Email:          req.Email,
-		HashedPassword: hashed,
+		HashedPassword: &hashed,
 	})
 	if err != nil {
 		respondError(w, http.StatusConflict, "could not create user (username or email may already be taken)")
@@ -87,7 +87,12 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := auth.CheckPassword(user.HashedPassword, req.Password); err != nil {
+	if user.HashedPassword == nil {
+		respondError(w, http.StatusUnauthorized, "invalid username or password")
+		return
+	}
+
+	if err := auth.CheckPassword(*user.HashedPassword, req.Password); err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid username or password")
 		return
 	}

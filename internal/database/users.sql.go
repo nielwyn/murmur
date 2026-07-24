@@ -11,17 +11,45 @@ import (
 	"github.com/google/uuid"
 )
 
+const createGoogleUser = `-- name: CreateGoogleUser :one
+INSERT INTO users (username, email, google_id)
+    VALUES ($1, $2, $3)
+RETURNING
+    id, created_at, updated_at, username, email, hashed_password, google_id
+`
+
+type CreateGoogleUserParams struct {
+	Username string  `json:"username"`
+	Email    string  `json:"email"`
+	GoogleID *string `json:"google_id"`
+}
+
+func (q *Queries) CreateGoogleUser(ctx context.Context, arg CreateGoogleUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createGoogleUser, arg.Username, arg.Email, arg.GoogleID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.GoogleID,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, hashed_password)
     VALUES ($1, $2, $3)
 RETURNING
-    id, created_at, updated_at, username, email, hashed_password
+    id, created_at, updated_at, username, email, hashed_password, google_id
 `
 
 type CreateUserParams struct {
-	Username       string `json:"username"`
-	Email          string `json:"email"`
-	HashedPassword string `json:"hashed_password"`
+	Username       string  `json:"username"`
+	Email          string  `json:"email"`
+	HashedPassword *string `json:"hashed_password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -34,13 +62,62 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Username,
 		&i.Email,
 		&i.HashedPassword,
+		&i.GoogleID,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT
+    id, created_at, updated_at, username, email, hashed_password, google_id
+FROM
+    users
+WHERE
+    email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.GoogleID,
+	)
+	return i, err
+}
+
+const getUserByGoogleID = `-- name: GetUserByGoogleID :one
+SELECT
+    id, created_at, updated_at, username, email, hashed_password, google_id
+FROM
+    users
+WHERE
+    google_id = $1
+`
+
+func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID *string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByGoogleID, googleID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.GoogleID,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    id, created_at, updated_at, username, email, hashed_password
+    id, created_at, updated_at, username, email, hashed_password, google_id
 FROM
     users
 WHERE
@@ -57,13 +134,14 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Username,
 		&i.Email,
 		&i.HashedPassword,
+		&i.GoogleID,
 	)
 	return i, err
 }
 
 const getUserByName = `-- name: GetUserByName :one
 SELECT
-    id, created_at, updated_at, username, email, hashed_password
+    id, created_at, updated_at, username, email, hashed_password, google_id
 FROM
     users
 WHERE
@@ -80,6 +158,39 @@ func (q *Queries) GetUserByName(ctx context.Context, username string) (User, err
 		&i.Username,
 		&i.Email,
 		&i.HashedPassword,
+		&i.GoogleID,
+	)
+	return i, err
+}
+
+const linkGoogleAccount = `-- name: LinkGoogleAccount :one
+UPDATE
+    users
+SET
+    google_id = $1,
+    updated_at = NOW()
+WHERE
+    id = $2
+RETURNING
+    id, created_at, updated_at, username, email, hashed_password, google_id
+`
+
+type LinkGoogleAccountParams struct {
+	GoogleID *string   `json:"google_id"`
+	ID       uuid.UUID `json:"id"`
+}
+
+func (q *Queries) LinkGoogleAccount(ctx context.Context, arg LinkGoogleAccountParams) (User, error) {
+	row := q.db.QueryRow(ctx, linkGoogleAccount, arg.GoogleID, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.GoogleID,
 	)
 	return i, err
 }
