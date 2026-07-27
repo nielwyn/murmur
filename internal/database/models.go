@@ -37,6 +37,7 @@ type Post struct {
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
+	ImageUrl    *string          `json:"image_url"`
 }
 
 type PostRead struct {

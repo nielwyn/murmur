@@ -1,6 +1,6 @@
 -- name: CreatePost :execrows
-INSERT INTO posts (title, link, description, published_at, feed_id)
-    VALUES ($1, $2, $3, $4, $5)
+INSERT INTO posts (title, link, description, published_at, feed_id, image_url)
+    VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (link)
     DO NOTHING;
 

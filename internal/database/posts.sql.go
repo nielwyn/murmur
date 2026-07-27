@@ -13,8 +13,8 @@ import (
 )
 
 const createPost = `-- name: CreatePost :execrows
-INSERT INTO posts (title, link, description, published_at, feed_id)
-    VALUES ($1, $2, $3, $4, $5)
+INSERT INTO posts (title, link, description, published_at, feed_id, image_url)
+    VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (link)
     DO NOTHING
 `
@@ -25,6 +25,7 @@ type CreatePostParams struct {
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
+	ImageUrl    *string          `json:"image_url"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, error) {
@@ -34,6 +35,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, 
 		arg.Description,
 		arg.PublishedAt,
 		arg.FeedID,
+		arg.ImageUrl,
 	)
 	if err != nil {
 		return 0, err
@@ -43,7 +45,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, 
 
 const getPostsForUser = `-- name: GetPostsForUser :many
 SELECT
-    posts.id, posts.created_at, posts.updated_at, posts.title, posts.link, posts.description, posts.published_at, posts.feed_id,
+    posts.id, posts.created_at, posts.updated_at, posts.title, posts.link, posts.description, posts.published_at, posts.feed_id, posts.image_url,
     feeds.title AS feed_title,
     (post_reads.read_at IS NOT NULL)::boolean AS read
 FROM
@@ -73,6 +75,7 @@ type GetPostsForUserRow struct {
 	Description *string          `json:"description"`
 	PublishedAt pgtype.Timestamp `json:"published_at"`
 	FeedID      uuid.UUID        `json:"feed_id"`
+	ImageUrl    *string          `json:"image_url"`
 	FeedTitle   string           `json:"feed_title"`
 	Read        bool             `json:"read"`
 }
@@ -95,6 +98,7 @@ func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams
 			&i.Description,
 			&i.PublishedAt,
 			&i.FeedID,
+			&i.ImageUrl,
 			&i.FeedTitle,
 			&i.Read,
 		); err != nil {

@@ -28,6 +28,7 @@ export interface Post {
   link: string;
   description?: string;
   read: boolean;
+  image_url?: string;
 }
 
 export class ApiError extends Error {

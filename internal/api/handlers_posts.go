@@ -18,6 +18,7 @@ type postsResponse struct {
 	FeedID      uuid.UUID  `json:"feed_id"`
 	FeedTitle   string     `json:"feed_title"`
 	Read        bool       `json:"read"`
+	ImageURL    *string    `json:"image_url,omitempty"`
 }
 
 const (
@@ -65,6 +66,7 @@ func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
 			FeedID:      p.FeedID,
 			FeedTitle:   p.FeedTitle,
 			Read:        p.Read,
+			ImageURL:    p.ImageUrl,
 		}
 	}
 	respondJSON(w, http.StatusOK, resp)

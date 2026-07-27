@@ -209,19 +209,32 @@
                                 {post.read ? "unread?" : "mark read"}
                             </button>
                         </div>
-                        <h3 class="post-title display">
-                            <a
-                                href={post.link}
-                                target="_blank"
-                                rel="noreferrer"
-                                onclick={() => setRead(post, true)}
-                            >
-                                {post.title}
-                            </a>
-                        </h3>
-                        {#if post.description}
-                            <p class="post-desc">{@html post.description}</p>
-                        {/if}
+                        <div class="post-body">
+                            {#if post.image_url}
+                                <img
+                                    class="post-thumb"
+                                    src={post.image_url}
+                                    alt=""
+                                />
+                            {/if}
+                            <div class="post-text">
+                                <h3 class="post-title display">
+                                    <a
+                                        href={post.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onclick={() => setRead(post, true)}
+                                    >
+                                        {post.title}
+                                    </a>
+                                </h3>
+                                {#if post.description}
+                                    <p class="post-desc">
+                                        {@html post.description}
+                                    </p>
+                                {/if}
+                            </div>
+                        </div>
                     </li>
                 {/each}
             </ol>
@@ -347,6 +360,25 @@
     .post.is-read .post-source::before {
         background: transparent;
         border: 1px solid var(--rule);
+    }
+
+    .post-body {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .post-thumb {
+        height: 5rem;
+        width: auto;
+        flex-shrink: 0;
+        border-radius: 4px;
+        object-fit: contain;
+        background: var(--paper-raised);
+    }
+
+    .post-text {
+        min-width: 0;
     }
 
     .post-title {

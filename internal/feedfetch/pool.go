@@ -52,7 +52,17 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 		if item.Link == "" {
 			continue
 		}
-		var publishedAt = pgtype.Timestamp{Time: *item.PublishedParsed, Valid: true}
+		var publishedAt pgtype.Timestamp
+		if item.PublishedParsed != nil {
+			publishedAt = pgtype.Timestamp{Time: *item.PublishedParsed, Valid: true}
+		}
+
+		var imageURL *string
+		if item.Image != nil && item.Image.URL != "" {
+			url := item.Image.URL
+			imageURL = &url
+		}
+
 		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
 		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
@@ -60,6 +70,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 			Description: &description,
 			PublishedAt: publishedAt,
 			FeedID:      feed.ID,
+			ImageUrl:    imageURL,
 		})
 		if err != nil {
 			log.Printf("feedfetch: saving post %q: %v", item.Title, err)
