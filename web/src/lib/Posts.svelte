@@ -224,6 +224,7 @@
                                         target="_blank"
                                         rel="noreferrer"
                                         onclick={() => setRead(post, true)}
+                                        onauxclick={() => setRead(post, true)}
                                     >
                                         {post.title}
                                     </a>
@@ -399,10 +400,6 @@
 
     .post-title a:hover {
         color: var(--accent);
-    }
-
-    .post.is-read .post-title {
-        font-weight: 450;
     }
 
     .post.is-read .post-title a {
