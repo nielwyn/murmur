@@ -3,9 +3,8 @@
     import AuthForm from "./lib/AuthForm.svelte";
     import Feeds from "./lib/Feeds.svelte";
     import Posts from "./lib/Posts.svelte";
-    import Status from "./lib/Status.svelte";
 
-    const VIEWS = ["posts", "feeds", "status"] as const;
+    const VIEWS = ["posts", "feeds"] as const;
     type View = (typeof VIEWS)[number];
     const VIEW_KEY = "murmur-view";
 
@@ -79,22 +78,13 @@
                 >
                     feeds
                 </button>
-                <button
-                    class="nav-tab"
-                    aria-current={view === "status" ? "page" : undefined}
-                    onclick={() => (view = "status")}
-                >
-                    status
-                </button>
             </nav>
             <hr class="rule" />
         </header>
         {#if view === "posts"}
             <Posts />
-        {:else if view === "feeds"}
-            <Feeds />
         {:else}
-            <Status />
+            <Feeds />
         {/if}
     {/if}
 </main>

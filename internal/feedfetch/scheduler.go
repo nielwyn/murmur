@@ -18,9 +18,7 @@ const (
 
 // Config controls the scheduler's behavior. Zero values fall back to defaults.
 type Config struct {
-	Workers int
-	// Interval is how often the scheduler checks for due feeds. Individual
-	// feeds are still only fetched per their own fetch_interval_seconds.
+	Workers      int
 	Interval     time.Duration
 	BatchSize    int32
 	FetchTimeout time.Duration
@@ -42,8 +40,6 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
-// Scheduler periodically fetches due feeds using a bounded worker pool
-// (fan-out) and a single collector goroutine (fan-in).
 type Scheduler struct {
 	db  *database.Queries
 	cfg Config
