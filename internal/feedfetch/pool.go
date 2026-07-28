@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/mmcdole/gofeed"
 )
 
 var descriptionPolicy = func() *bluemonday.Policy {
@@ -20,18 +21,15 @@ var descriptionPolicy = func() *bluemonday.Policy {
 	return p
 }()
 
-// worker pulls jobs until the channel is closed, sending one FetchResult per
-// job to results. Running several of these concurrently is the fan-out half
-// of the pipeline.
+// worker drains jobs until the channel closes, one FetchResult per job;
+// run several for the fan-out half of the pipeline.
 func (s *Scheduler) worker(ctx context.Context, jobs <-chan FetchJob, results chan<- FetchResult) {
 	for job := range jobs {
 		results <- s.fetchOne(ctx, job.Feed)
 	}
 }
 
-// fetchOne fetches a single feed and stores any new posts. fetchTimeout
-// bounds the HTTP request so one slow/unresponsive feed can't stall a
-// worker (and thus the whole batch) indefinitely.
+// fetchTimeout bounds the request so one slow feed can't stall the worker.
 func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResult {
 	start := time.Now()
 
@@ -57,12 +55,6 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 			publishedAt = pgtype.Timestamp{Time: *item.PublishedParsed, Valid: true}
 		}
 
-		var imageURL *string
-		if item.Image != nil && item.Image.URL != "" {
-			url := item.Image.URL
-			imageURL = &url
-		}
-
 		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
 		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
@@ -70,7 +62,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 			Description: &description,
 			PublishedAt: publishedAt,
 			FeedID:      feed.ID,
-			ImageUrl:    imageURL,
+			ImageUrl:    resolveImageURL(item),
 		})
 		if err != nil {
 			log.Printf("feedfetch: saving post %q: %v", item.Title, err)
@@ -80,4 +72,19 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 	}
 
 	return FetchResult{Feed: feed, NewPosts: newPosts, Duration: time.Since(start)}
+}
+
+// Falls back to media:thumbnail since gofeed's Image field misses it
+// (e.g. BBC feeds only set media:thumbnail, not itunes:image/media:content).
+func resolveImageURL(item *gofeed.Item) *string {
+	if item.Image != nil && item.Image.URL != "" {
+		url := item.Image.URL
+		return &url
+	}
+	if thumbs := item.Extensions["media"]["thumbnail"]; len(thumbs) > 0 {
+		if url := thumbs[0].Attrs["url"]; url != "" {
+			return &url
+		}
+	}
+	return nil
 }
