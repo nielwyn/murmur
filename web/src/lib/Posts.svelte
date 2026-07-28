@@ -52,6 +52,7 @@
     let loading = $state(true);
     let error = $state("");
     let requestId = 0;
+    let showBackToTop = $state(false);
 
     // Server already filters by unread; this just hides a post instantly on mark-read.
     const visible = $derived(posts.filter((p) => filter === "all" || !p.read));
@@ -201,6 +202,23 @@
             loadOlder();
         }
     });
+
+    function scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "auto"
+                : "smooth",
+        });
+    }
+
+    $effect(() => {
+        const onScroll = () => {
+            showBackToTop = window.scrollY > 600;
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    });
 </script>
 
 <div class="toolbar">
@@ -328,6 +346,23 @@
         </span>
     {/if}
 </div>
+
+{#if showBackToTop}
+    <!-- "container" reuses the same responsive max-width/centering as
+    <main class="container"> in App.svelte, so the button stays near the
+    reading column's edge instead of the raw viewport corner on wide screens. -->
+    <div class="back-to-top-layer container">
+        <button
+            class="back-to-top"
+            onclick={scrollToTop}
+            aria-label="back to top"
+            transition:fade={{ duration: fadeMs }}
+        >
+            <span class="back-to-top-arrow" aria-hidden="true">↑</span>
+            top
+        </button>
+    </div>
+{/if}
 
 <style>
     .toolbar {
@@ -554,6 +589,54 @@
         letter-spacing: 0.3em;
     }
 
+    .back-to-top-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .back-to-top {
+        all: unset;
+        position: absolute;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        pointer-events: auto;
+        background: var(--paper-raised);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.5rem 1.1rem 0.5rem 0.9rem;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--ink-faint);
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        transition:
+            color 0.15s ease,
+            border-color 0.15s ease;
+    }
+
+    .back-to-top-arrow {
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+
+    .back-to-top:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .back-to-top:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
     .empty {
         display: flex;
         flex-direction: column;
@@ -568,7 +651,8 @@
 
     @media (prefers-reduced-motion: reduce) {
         .link-tab,
-        .read-toggle {
+        .read-toggle,
+        .back-to-top {
             transition: none;
         }
     }
