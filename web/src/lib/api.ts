@@ -93,7 +93,27 @@ export const api = {
   unfollowFeed: (feedId: string) =>
     request<void>(`/api/feeds/${feedId}/follow`, { method: "DELETE" }),
 
-  listPosts: () => request<Post[]>("/api/posts/"),
+  listPosts: (opts?: {
+    before?: { id: string; published_at?: string };
+    unread?: boolean;
+    feedTitle?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (opts?.before) {
+      params.set("before_id", opts.before.id);
+      if (opts.before.published_at) {
+        params.set("before_published_at", opts.before.published_at);
+      }
+    }
+    if (opts?.unread) {
+      params.set("unread", "true");
+    }
+    if (opts?.feedTitle) {
+      params.set("feed", opts.feedTitle);
+    }
+    const qs = params.toString();
+    return request<Post[]>(`/api/posts/${qs ? `?${qs}` : ""}`);
+  },
 
   markPostRead: (postId: string) =>
     request<void>(`/api/posts/${postId}/read`, { method: "POST" }),

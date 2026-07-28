@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nielwyn/murmur/internal/database"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type postsResponse struct {
@@ -42,12 +44,51 @@ func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
 		limit = maxLimit
 	}
 
+	var beforeID pgtype.UUID
+	if raw := r.URL.Query().Get("before_id"); raw != "" {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid before_id")
+			return
+		}
+		beforeID = pgtype.UUID{Bytes: id, Valid: true}
+	}
+
+	var beforePublishedAt pgtype.Timestamp
+	if raw := r.URL.Query().Get("before_published_at"); raw != "" {
+		t, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid before_published_at")
+			return
+		}
+		beforePublishedAt = pgtype.Timestamp{Time: t, Valid: true}
+	}
+
+	var unread *bool
+	if raw := r.URL.Query().Get("unread"); raw != "" {
+		b, err := strconv.ParseBool(raw)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid unread")
+			return
+		}
+		unread = &b
+	}
+
+	var feedTitle *string
+	if raw := r.URL.Query().Get("feed"); raw != "" {
+		feedTitle = &raw
+	}
+
 	posts, err := s.db.GetPostsForUser(r.Context(), database.GetPostsForUserParams{
-		UserID: user.ID,
-		Limit:  int32(limit),
+		UserID:            user.ID,
+		Limit:             int32(limit),
+		BeforeID:          beforeID,
+		BeforePublishedAt: beforePublishedAt,
+		Unread:            unread,
+		FeedTitle:         feedTitle,
 	})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "could not list followed feeds")
+		respondError(w, http.StatusInternalServerError, "could not list posts")
 		return
 	}
 	resp := make([]postsResponse, len(posts))

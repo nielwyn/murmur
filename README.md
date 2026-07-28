@@ -1,13 +1,9 @@
 # Murmur
 
-A self-hosted, multi-user RSS/Atom feed reader — Go backend, Svelte frontend,
-built to learn Go concurrency (goroutines, channels, context, sync).
+RSS/Atom feed reader — Go backend, Svelte frontend
 
 > A *murmuration* is a starling flock moving as one shape — like many feeds
 > aggregated into one reading stream.
-
-**Status: work in progress.** Auth, feeds, and posts are up; read tracking
-and pagination are next.
 
 ## Highlights
 

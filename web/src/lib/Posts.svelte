@@ -42,37 +42,18 @@
         return "";
     }
 
-    // One extra "page" so the pagination button has something to load.
-    const OLDER_PAGE: Post[] = [
-        {
-            id: "13",
-            feed_title: "the go blog",
-            published_at: "2026-07-13T17:25:00Z",
-            title: "Profile-guided optimization, two years in",
-            link: "https://go.dev/blog/",
-            description:
-                "What PGO has delivered since 1.21, real-world numbers from large deployments, and how to start collecting profiles today.",
-            read: true,
-        },
-        {
-            id: "14",
-            feed_title: "hacker news",
-            published_at: "2026-07-13T10:58:00Z",
-            title: "Ask HN: What's your self-hosting stack in 2026?",
-            link: "https://news.ycombinator.com/",
-            description:
-                "Raspberry Pis, mini PCs, and old laptops. Docker Compose still rules, and everyone has an RSS reader in the list somewhere.",
-            read: true,
-        },
-    ];
-
+    let streamFoot: HTMLElement | undefined = $state();
     let posts: Post[] = $state([]);
     let filter: "all" | "unread" = $state("all");
-    let olderLoaded = $state(false);
+    let feedFilter = $state("all");
+    let feedOptions: string[] = $state([]);
+    let loadingOlder = $state(false);
     let ended = $state(false);
     let loading = $state(true);
     let error = $state("");
+    let requestId = 0;
 
+    // Server already filters by unread; this just hides a post instantly on mark-read.
     const visible = $derived(posts.filter((p) => filter === "all" || !p.read));
     const unreadTotal = $derived(posts.filter((p) => !p.read).length);
     const groups = $derived.by(() => {
@@ -105,7 +86,9 @@
         } catch (e) {
             post.read = previous;
             error =
-                e instanceof ApiError ? e.message : "could not update read status";
+                e instanceof ApiError
+                    ? e.message
+                    : "could not update read status";
         }
     }
 
@@ -117,32 +100,107 @@
         } catch (e) {
             error =
                 e instanceof ApiError ? e.message : "could not mark all read";
-            await load();
+            await load(filter === "unread", feedFilter);
         }
     }
 
-    function loadOlder() {
-        if (olderLoaded) {
-            ended = true;
-        } else {
-            posts.push(...OLDER_PAGE);
-            olderLoaded = true;
+    async function loadFeedOptions() {
+        try {
+            const follows = await api.listFollowing();
+            const titles = follows
+                .map((f) => f.feed_title)
+                .filter((t): t is string => !!t);
+            feedOptions = [...new Set(titles)].sort((a, b) =>
+                a.localeCompare(b),
+            );
+        } catch {
+            // non-critical: dropdown just stays empty
         }
     }
 
-    async function load() {
-        loading = true;
+    async function loadOlder() {
+        if (loadingOlder || ended || posts.length === 0) return;
+        const id = requestId;
+        loadingOlder = true;
         error = "";
         try {
-            posts = await api.listPosts();
+            const last = posts[posts.length - 1];
+            const older = await api.listPosts({
+                before: { id: last.id, published_at: last.published_at },
+                unread: filter === "unread",
+                feedTitle: feedFilter === "all" ? undefined : feedFilter,
+            });
+            if (id !== requestId) return; // filter changed mid-flight
+            if (older.length === 0) {
+                ended = true;
+            } else {
+                posts.push(...older);
+            }
         } catch (e) {
-            error = e instanceof ApiError ? e.message : "could not load posts";
+            if (id !== requestId) return;
+            error =
+                e instanceof ApiError
+                    ? e.message
+                    : "could not load older posts";
         } finally {
-            loading = false;
+            if (id === requestId) loadingOlder = false;
         }
     }
 
-    load();
+    async function load(unreadOnly: boolean, feedTitle: string) {
+        const id = ++requestId;
+        loading = true;
+        error = "";
+        ended = false;
+        try {
+            const result = await api.listPosts({
+                unread: unreadOnly,
+                feedTitle: feedTitle === "all" ? undefined : feedTitle,
+            });
+            if (id !== requestId) return; // a newer filter change superseded this
+            posts = result;
+        } catch (e) {
+            if (id !== requestId) return;
+            error = e instanceof ApiError ? e.message : "could not load posts";
+        } finally {
+            if (id === requestId) loading = false;
+        }
+    }
+
+    loadFeedOptions();
+    $effect(() => {
+        load(filter === "unread", feedFilter);
+    });
+
+    // Tracked as state (not calling loadOlder directly in the observer) so
+    // the effect below keeps retrying if one page isn't enough to push the
+    // marker back out of view.
+    let isIntersecting = $state(false);
+
+    $effect(() => {
+        if (!streamFoot) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                isIntersecting = entries[0].isIntersecting;
+            },
+            { rootMargin: "600px 0px" },
+        );
+        observer.observe(streamFoot);
+        return () => observer.disconnect();
+    });
+
+    // !error avoids retrying in a tight loop on sustained failure; the retry button below clears it.
+    $effect(() => {
+        if (
+            isIntersecting &&
+            !loadingOlder &&
+            !ended &&
+            !error &&
+            posts.length > 0
+        ) {
+            loadOlder();
+        }
+    });
 </script>
 
 <div class="toolbar">
@@ -163,6 +221,18 @@
         >
             unread{unreadTotal > 0 ? ` (${unreadTotal})` : ""}
         </button>
+        {#if feedOptions.length > 1}
+            <select
+                class="feed-filter section-label"
+                aria-label="filter by feed"
+                bind:value={feedFilter}
+            >
+                <option value="all">all feeds</option>
+                {#each feedOptions as title (title)}
+                    <option value={title}>{title}</option>
+                {/each}
+            </select>
+        {/if}
     </div>
     <button class="link-tab" onclick={markAllRead}>mark all read</button>
 </div>
@@ -243,13 +313,19 @@
     {/each}
 {/if}
 
-<div class="stream-foot">
+<div class="stream-foot" bind:this={streamFoot}>
     {#if ended}
         <span class="section-label end-mark">
-            — beginning of your stream ∎ —
+            — beginning of your stream —
         </span>
-    {:else}
-        <button class="link-tab" onclick={loadOlder}>↓ older posts</button>
+    {:else if error}
+        <button class="link-tab" onclick={loadOlder}>
+            {error} — retry
+        </button>
+    {:else if loadingOlder}
+        <span class="section-label loading-mark" aria-live="polite">
+            loading older posts…
+        </span>
     {/if}
 </div>
 
@@ -266,6 +342,25 @@
         display: flex;
         gap: 0.75rem;
         align-items: baseline;
+    }
+
+    .feed-filter {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid transparent;
+        color: var(--ink-faint);
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        cursor: pointer;
+        padding: 0 0 2px;
+    }
+
+    .feed-filter:hover,
+    .feed-filter:focus-visible {
+        color: var(--ink);
     }
 
     .link-tab {
@@ -370,7 +465,7 @@
     }
 
     .post-thumb {
-        height: 5rem;
+        height: 6.5rem;
         width: auto;
         flex-shrink: 0;
         border-radius: 4px;

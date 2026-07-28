@@ -56,14 +56,28 @@ FROM
         AND post_reads.user_id = $1
 WHERE
     feed_follows.user_id = $1
+    -- pagination cursor
+    AND (
+        $3::uuid IS NULL
+        OR (COALESCE(posts.published_at, '-infinity'), posts.id)
+            < (COALESCE($4::timestamp, '-infinity'), $3::uuid)
+    )
+    -- unread filter
+    AND ($5::boolean IS NOT TRUE OR post_reads.read_at IS NULL)
+    -- feed filter
+    AND ($6::text IS NULL OR feeds.title = $6::text)
 ORDER BY
-    posts.published_at DESC NULLS LAST
+    posts.published_at DESC NULLS LAST, posts.id DESC
 LIMIT $2
 `
 
 type GetPostsForUserParams struct {
-	UserID uuid.UUID `json:"user_id"`
-	Limit  int32     `json:"limit"`
+	UserID            uuid.UUID        `json:"user_id"`
+	Limit             int32            `json:"limit"`
+	BeforeID          pgtype.UUID      `json:"before_id"`
+	BeforePublishedAt pgtype.Timestamp `json:"before_published_at"`
+	Unread            *bool            `json:"unread"`
+	FeedTitle         *string          `json:"feed_title"`
 }
 
 type GetPostsForUserRow struct {
@@ -80,8 +94,18 @@ type GetPostsForUserRow struct {
 	Read        bool             `json:"read"`
 }
 
+// Keyset pagination via before_id/before_published_at (the last post's own
+// fields). NULLs coalesce to -infinity since NULLS LAST sorts them oldest.
+// unread/feed_title filter here, not client-side, so pagination stays correct.
 func (q *Queries) GetPostsForUser(ctx context.Context, arg GetPostsForUserParams) ([]GetPostsForUserRow, error) {
-	rows, err := q.db.Query(ctx, getPostsForUser, arg.UserID, arg.Limit)
+	rows, err := q.db.Query(ctx, getPostsForUser,
+		arg.UserID,
+		arg.Limit,
+		arg.BeforeID,
+		arg.BeforePublishedAt,
+		arg.Unread,
+		arg.FeedTitle,
+	)
 	if err != nil {
 		return nil, err
 	}

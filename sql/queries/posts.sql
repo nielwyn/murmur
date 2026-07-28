@@ -5,6 +5,9 @@ ON CONFLICT (link)
     DO NOTHING;
 
 -- name: GetPostsForUser :many
+-- Keyset pagination via before_id/before_published_at (the last post's own
+-- fields). NULLs coalesce to -infinity since NULLS LAST sorts them oldest.
+-- unread/feed_title filter here, not client-side, so pagination stays correct.
 SELECT
     posts.*,
     feeds.title AS feed_title,
@@ -17,8 +20,18 @@ FROM
         AND post_reads.user_id = $1
 WHERE
     feed_follows.user_id = $1
+    -- pagination cursor
+    AND (
+        sqlc.narg('before_id')::uuid IS NULL
+        OR (COALESCE(posts.published_at, '-infinity'), posts.id)
+            < (COALESCE(sqlc.narg('before_published_at')::timestamp, '-infinity'), sqlc.narg('before_id')::uuid)
+    )
+    -- unread filter
+    AND (sqlc.narg('unread')::boolean IS NOT TRUE OR post_reads.read_at IS NULL)
+    -- feed filter
+    AND (sqlc.narg('feed_title')::text IS NULL OR feeds.title = sqlc.narg('feed_title')::text)
 ORDER BY
-    posts.published_at DESC NULLS LAST
+    posts.published_at DESC NULLS LAST, posts.id DESC
 LIMIT $2;
 
 -- name: MarkPostRead :exec
