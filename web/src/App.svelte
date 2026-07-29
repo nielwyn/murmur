@@ -163,6 +163,10 @@
     main {
         max-width: 42rem;
         padding-block: 2rem;
+        /* Pico's .container zeroes this out past 576px, assuming its own
+           narrower max-width always leaves an auto-margin gutter — false
+           once max-width is overridden wider, so pin it explicitly. */
+        padding-inline: var(--pico-spacing);
     }
 
     .center {

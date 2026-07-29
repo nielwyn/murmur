@@ -385,19 +385,18 @@
 </div>
 
 {#if showBackToTop}
-    <!-- "container" reuses the same responsive max-width/centering as
-    <main class="container"> in App.svelte, so the button stays near the
-    reading column's edge instead of the raw viewport corner on wide screens. -->
-    <div class="back-to-top-layer container">
-        <button
-            class="back-to-top"
-            onclick={scrollToTop}
-            aria-label="back to top"
-            transition:fade={{ duration: fadeMs }}
-        >
-            <span class="back-to-top-arrow" aria-hidden="true">↑</span>
-            top
-        </button>
+    <div class="back-to-top-layer">
+        <div class="back-to-top-column">
+            <button
+                class="back-to-top"
+                onclick={scrollToTop}
+                aria-label="back to top"
+                transition:fade={{ duration: fadeMs }}
+            >
+                <span class="back-to-top-arrow" aria-hidden="true">↑</span>
+                top
+            </button>
+        </div>
     </div>
 {/if}
 
@@ -677,6 +676,14 @@
         z-index: 10;
     }
 
+    /* Keep in sync with main's max-width in App.svelte. */
+    .back-to-top-column {
+        position: relative;
+        height: 100%;
+        max-width: 42rem;
+        margin-inline: auto;
+    }
+
     .back-to-top {
         all: unset;
         position: absolute;
@@ -686,8 +693,8 @@
         align-items: center;
         gap: 0.4rem;
         pointer-events: auto;
-        background: var(--paper-raised);
-        border: 1px solid var(--rule);
+        background: var(--accent);
+        border: 1px solid var(--accent);
         border-radius: 999px;
         padding: 0.5rem 1.1rem 0.5rem 0.9rem;
         font-family: var(--font-mono);
@@ -695,12 +702,12 @@
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        color: var(--ink-faint);
+        color: var(--accent-ink);
         cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25);
         transition:
-            color 0.15s ease,
-            border-color 0.15s ease;
+            background-color 0.15s ease,
+            box-shadow 0.15s ease;
     }
 
     .back-to-top-arrow {
@@ -709,8 +716,9 @@
     }
 
     .back-to-top:hover {
-        color: var(--accent);
-        border-color: var(--accent);
+        background: var(--pico-primary-hover);
+        border-color: var(--pico-primary-hover);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
     }
 
     .back-to-top:focus-visible {
