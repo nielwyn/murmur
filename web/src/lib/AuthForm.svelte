@@ -5,7 +5,8 @@
 
     let { onAuthed }: { onAuthed: (user: User) => void } = $props();
 
-    let mode: "login" | "register" = $state("login");
+    type Mode = "login" | "register";
+    let mode: Mode = $state("login");
     let username = $state("");
     let email = $state("");
     let password = $state("");
@@ -44,8 +45,7 @@
             if (!event.data || typeof event.data.type !== "string") return;
 
             if (event.data.type === "google-auth-success") {
-                api
-                    .me()
+                api.me()
                     .then(onAuthed)
                     .catch(() => {
                         error = "Google sign-in failed. Please try again.";
@@ -57,6 +57,11 @@
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
     });
+
+    function setMode(newMode: Mode) {
+        mode = newMode;
+        error = "";
+    }
 
     async function submit(event: SubmitEvent) {
         event.preventDefault();
@@ -89,7 +94,7 @@
             role="tab"
             aria-selected={mode === "login"}
             class="link-tab"
-            onclick={() => (mode = "login")}
+            onclick={() => setMode("login")}
         >
             log in
         </button>
@@ -98,7 +103,7 @@
             role="tab"
             aria-selected={mode === "register"}
             class="link-tab"
-            onclick={() => (mode = "register")}
+            onclick={() => setMode("register")}
         >
             register
         </button>
