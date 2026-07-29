@@ -38,3 +38,23 @@ GET {{URL}}/api/feeds HTTP/1.1
 ### follow feeds
 
 POST {{URL}}/api/feeds/d708d4e5-45be-4222-9702-24d672b14ee5/follow HTTP/1.1
+
+### get user posts
+
+GET {{URL}}/api/posts/?limit=10 HTTP/1.1
+Accept: application/json
+
+### get user posts, unread only
+
+GET {{URL}}/api/posts/?limit=10&unread=true HTTP/1.1
+Accept: application/json
+
+### get user posts, filtered by feed
+
+GET {{URL}}/api/posts/?limit=10&feed=hacker%20news HTTP/1.1
+Accept: application/json
+
+### get older posts (keyset pagination cursor)
+
+GET {{URL}}/api/posts/?limit=10&before_id=00000000-0000-0000-0000-000000000000&before_published_at=2026-07-01T00:00:00Z HTTP/1.1
+Accept: application/json
