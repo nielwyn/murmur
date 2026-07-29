@@ -152,7 +152,7 @@
             <hr class="rule" />
         </header>
         {#if view === "posts"}
-            <Posts />
+            <Posts onGoToFeeds={() => (view = "feeds")} />
         {:else}
             <Feeds />
         {/if}

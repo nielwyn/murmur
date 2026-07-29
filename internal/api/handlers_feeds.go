@@ -90,6 +90,10 @@ func (s *Server) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Seed the feed's posts immediately from the fetch above, so it isn't
+	// sitting empty until the next scheduled tick picks it up.
+	feedfetch.SavePosts(r.Context(), s.db, feed.ID, fetchedFeed.Items)
+
 	respondJSON(w, http.StatusCreated, feedResponse{ID: feed.ID, Title: feed.Title, Link: feed.Link})
 }
 

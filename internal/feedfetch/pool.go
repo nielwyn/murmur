@@ -10,6 +10,7 @@ import (
 
 	"github.com/nielwyn/murmur/internal/database"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/mmcdole/gofeed"
@@ -45,8 +46,13 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 		return FetchResult{Feed: feed, Duration: time.Since(start), Err: fmt.Errorf("fetching feed: %w", err)}
 	}
 
+	newPosts := SavePosts(ctx, s.db, feed.ID, fetchedFeed.Items)
+	return FetchResult{Feed: feed, NewPosts: newPosts, Duration: time.Since(start)}
+}
+
+func SavePosts(ctx context.Context, db *database.Queries, feedID uuid.UUID, items []*gofeed.Item) int {
 	newPosts := 0
-	for _, item := range fetchedFeed.Items {
+	for _, item := range items {
 		if item.Link == "" {
 			continue
 		}
@@ -56,12 +62,12 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 		}
 
 		description := strings.TrimSpace(descriptionPolicy.Sanitize(html.UnescapeString(item.Description)))
-		rows, err := s.db.CreatePost(ctx, database.CreatePostParams{
+		rows, err := db.CreatePost(ctx, database.CreatePostParams{
 			Title:       html.UnescapeString(item.Title),
 			Link:        item.Link,
 			Description: &description,
 			PublishedAt: publishedAt,
-			FeedID:      feed.ID,
+			FeedID:      feedID,
 			ImageUrl:    resolveImageURL(item),
 		})
 		if err != nil {
@@ -70,8 +76,7 @@ func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResul
 		}
 		newPosts += int(rows)
 	}
-
-	return FetchResult{Feed: feed, NewPosts: newPosts, Duration: time.Since(start)}
+	return newPosts
 }
 
 // Falls back to media:thumbnail since gofeed's Image field misses it

@@ -3,6 +3,8 @@
     import { SvelteSet } from "svelte/reactivity";
     import { api, ApiError, type Post } from "./api";
 
+    let { onGoToFeeds }: { onGoToFeeds: () => void } = $props();
+
     const loadedImages = new SvelteSet<string>();
     const failedImages = new SvelteSet<string>();
 
@@ -51,6 +53,7 @@
     let filter: "all" | "unread" = $state("all");
     let feedFilter = $state("all");
     let feedOptions: string[] = $state([]);
+    let hasFollows = $state(true);
     let loadingOlder = $state(false);
     let ended = $state(false);
     let loading = $state(true);
@@ -112,15 +115,14 @@
     async function loadFeedOptions() {
         try {
             const follows = await api.listFollowing();
+            hasFollows = follows.length > 0;
             const titles = follows
                 .map((f) => f.feed_title)
                 .filter((t): t is string => !!t);
             feedOptions = [...new Set(titles)].sort((a, b) =>
                 a.localeCompare(b),
             );
-        } catch {
-            // non-critical: dropdown just stays empty
-        }
+        } catch {}
     }
 
     async function loadOlder() {
@@ -262,10 +264,25 @@
 
 {#if visible.length === 0}
     <div class="empty">
-        <span class="display">You're caught up.</span>
-        <span class="section-label">
-            nothing unread — the murmuration is quiet
-        </span>
+        {#if posts.length === 0 && !hasFollows}
+            <span class="display">Nothing here yet.</span>
+            <span class="section-label">
+                follow a feed to start your stream
+            </span>
+            <button class="link-tab" onclick={onGoToFeeds}>
+                → go to feeds
+            </button>
+        {:else if posts.length === 0}
+            <span class="display">Nothing here yet.</span>
+            <span class="section-label">
+                no posts fetched for your feeds yet — check back soon
+            </span>
+        {:else}
+            <span class="display">You're caught up.</span>
+            <span class="section-label">
+                nothing unread — the murmuration is quiet
+            </span>
+        {/if}
     </div>
 {:else}
     {#each groups as group (group.day)}
