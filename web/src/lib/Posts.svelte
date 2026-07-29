@@ -1,6 +1,10 @@
 <script lang="ts">
     import { fade } from "svelte/transition";
+    import { SvelteSet } from "svelte/reactivity";
     import { api, ApiError, type Post } from "./api";
+
+    const loadedImages = new SvelteSet<string>();
+    const failedImages = new SvelteSet<string>();
 
     const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
@@ -298,12 +302,28 @@
                             </button>
                         </div>
                         <div class="post-body">
-                            {#if post.image_url}
-                                <img
-                                    class="post-thumb"
-                                    src={post.image_url}
-                                    alt=""
-                                />
+                            {#if post.image_url && !failedImages.has(post.image_url)}
+                                <div
+                                    class="post-thumb-wrap"
+                                    class:is-loaded={loadedImages.has(
+                                        post.image_url,
+                                    )}
+                                >
+                                    <img
+                                        class="post-thumb"
+                                        class:is-loaded={loadedImages.has(
+                                            post.image_url,
+                                        )}
+                                        src={post.image_url}
+                                        alt=""
+                                        loading="lazy"
+                                        decoding="async"
+                                        onload={() =>
+                                            loadedImages.add(post.image_url!)}
+                                        onerror={() =>
+                                            failedImages.add(post.image_url!)}
+                                    />
+                                </div>
                             {/if}
                             <div class="post-text">
                                 <h3 class="post-title display">
@@ -499,13 +519,57 @@
         align-items: flex-start;
     }
 
-    .post-thumb {
-        height: 6.5rem;
-        width: auto;
+    .post-thumb-wrap {
+        position: relative;
+        height: 5.5rem;
+        width: 9.75rem;
         flex-shrink: 0;
         border-radius: 4px;
-        object-fit: contain;
+        overflow: hidden;
         background: var(--paper-raised);
+    }
+
+    .post-thumb-wrap::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            var(--paper-raised) 25%,
+            var(--rule) 50%,
+            var(--paper-raised) 75%
+        );
+        background-size: 200% 100%;
+        animation: thumb-shimmer 1.4s ease-in-out infinite;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+    }
+
+    .post-thumb-wrap.is-loaded::before {
+        opacity: 0;
+    }
+
+    .post-thumb {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .post-thumb.is-loaded {
+        opacity: 1;
+    }
+
+    @keyframes thumb-shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
     }
 
     .post-text {
@@ -654,6 +718,10 @@
         .read-toggle,
         .back-to-top {
             transition: none;
+        }
+
+        .post-thumb-wrap::before {
+            animation: none;
         }
     }
 </style>
