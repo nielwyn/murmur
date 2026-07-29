@@ -47,9 +47,9 @@
     --pico-border-radius: 2px;
 }
 
+/* Followed automatically when the user hasn't picked a theme explicitly. */
 @media (prefers-color-scheme: dark) {
-    :root {
-        /* warm ink-on-slate, never pure black */
+    :root:not([data-theme="light"]) {
         --paper: #171512;
         --paper-raised: #1f1c18;
         --ink: #ece5d8;
@@ -62,6 +62,22 @@
         --pico-primary-hover-background: #e5a291;
         --pico-primary-hover-border: #e5a291;
     }
+}
+
+/* Explicit choice (data-theme, set by the toggle in App.svelte) overrides
+   the OS preference above in either direction. */
+:root[data-theme="dark"] {
+    --paper: #171512;
+    --paper-raised: #1f1c18;
+    --ink: #ece5d8;
+    --ink-soft: #b3aa9a;
+    --ink-faint: #7c7466;
+    --rule: #38332b;
+    --accent: #d98873;
+    --accent-ink: #171512;
+    --pico-primary-hover: #e5a291;
+    --pico-primary-hover-background: #e5a291;
+    --pico-primary-hover-border: #e5a291;
 }
 
 /* ---- base layout --------------------------------------------------- */
