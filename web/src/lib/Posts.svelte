@@ -51,8 +51,6 @@
     let streamFoot: HTMLElement | undefined = $state();
     let posts: Post[] = $state([]);
     let filter: "all" | "unread" = $state("all");
-    let feedFilter = $state("all");
-    let feedOptions: string[] = $state([]);
     let hasFollows = $state(true);
     let loadingOlder = $state(false);
     let ended = $state(false);
@@ -108,20 +106,13 @@
         } catch (e) {
             error =
                 e instanceof ApiError ? e.message : "could not mark all read";
-            await load(filter === "unread", feedFilter);
+            await load(filter === "unread");
         }
     }
 
-    async function loadFeedOptions() {
+    async function checkHasFollows() {
         try {
-            const follows = await api.listFollowing();
-            hasFollows = follows.length > 0;
-            const titles = follows
-                .map((f) => f.feed_title)
-                .filter((t): t is string => !!t);
-            feedOptions = [...new Set(titles)].sort((a, b) =>
-                a.localeCompare(b),
-            );
+            hasFollows = (await api.listFollowing()).length > 0;
         } catch {}
     }
 
@@ -135,7 +126,6 @@
             const older = await api.listPosts({
                 before: { id: last.id, published_at: last.published_at },
                 unread: filter === "unread",
-                feedTitle: feedFilter === "all" ? undefined : feedFilter,
             });
             if (id !== requestId) return; // filter changed mid-flight
             if (older.length === 0) {
@@ -154,16 +144,13 @@
         }
     }
 
-    async function load(unreadOnly: boolean, feedTitle: string) {
+    async function load(unreadOnly: boolean) {
         const id = ++requestId;
         loading = true;
         error = "";
         ended = false;
         try {
-            const result = await api.listPosts({
-                unread: unreadOnly,
-                feedTitle: feedTitle === "all" ? undefined : feedTitle,
-            });
+            const result = await api.listPosts({ unread: unreadOnly });
             if (id !== requestId) return; // a newer filter change superseded this
             posts = result;
         } catch (e) {
@@ -174,9 +161,9 @@
         }
     }
 
-    loadFeedOptions();
+    checkHasFollows();
     $effect(() => {
-        load(filter === "unread", feedFilter);
+        load(filter === "unread");
     });
 
     // Tracked as state (not calling loadOlder directly in the observer) so
@@ -245,18 +232,6 @@
         >
             unread{unreadTotal > 0 ? ` (${unreadTotal})` : ""}
         </button>
-        {#if feedOptions.length > 1}
-            <select
-                class="feed-filter section-label"
-                aria-label="filter by feed"
-                bind:value={feedFilter}
-            >
-                <option value="all">all feeds</option>
-                {#each feedOptions as title (title)}
-                    <option value={title}>{title}</option>
-                {/each}
-            </select>
-        {/if}
     </div>
     <button class="link-tab" onclick={markAllRead}>mark all read</button>
 </div>
@@ -413,25 +388,6 @@
         display: flex;
         gap: 0.75rem;
         align-items: baseline;
-    }
-
-    .feed-filter {
-        background: transparent;
-        border: none;
-        border-bottom: 1px solid transparent;
-        color: var(--ink-faint);
-        font-family: var(--font-mono);
-        font-size: 0.7rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.18em;
-        cursor: pointer;
-        padding: 0 0 2px;
-    }
-
-    .feed-filter:hover,
-    .feed-filter:focus-visible {
-        color: var(--ink);
     }
 
     .link-tab {
