@@ -12,6 +12,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countUnreadPostsForUser = `-- name: CountUnreadPostsForUser :one
+SELECT
+    count(*)
+FROM
+    posts
+    JOIN feed_follows ON feed_follows.feed_id = posts.feed_id
+    LEFT JOIN post_reads ON post_reads.post_id = posts.id
+        AND post_reads.user_id = $1
+WHERE
+    feed_follows.user_id = $1
+    AND post_reads.read_at IS NULL
+`
+
+func (q *Queries) CountUnreadPostsForUser(ctx context.Context, userID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnreadPostsForUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPost = `-- name: CreatePost :execrows
 INSERT INTO posts (title, link, description, published_at, feed_id, image_url)
     VALUES ($1, $2, $3, $4, $5, $6)

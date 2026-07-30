@@ -115,6 +115,11 @@ export const api = {
     return request<Post[]>(`/api/posts/${qs ? `?${qs}` : ""}`);
   },
 
+  unreadCount: () =>
+    request<{ count: number }>("/api/posts/unread-count").then(
+      (r) => r.count,
+    ),
+
   markPostRead: (postId: string) =>
     request<void>(`/api/posts/${postId}/read`, { method: "POST" }),
 

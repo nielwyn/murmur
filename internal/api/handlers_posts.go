@@ -113,6 +113,22 @@ func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, resp)
 }
 
+type unreadCountResponse struct {
+	Count int64 `json:"count"`
+}
+
+func (s *Server) handleUnreadCount(w http.ResponseWriter, r *http.Request) {
+	user := userFromContext(r)
+
+	count, err := s.db.CountUnreadPostsForUser(r.Context(), user.ID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "could not count unread posts")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, unreadCountResponse{Count: count})
+}
+
 func (s *Server) handleMarkPostRead(w http.ResponseWriter, r *http.Request) {
 	user := userFromContext(r)
 
