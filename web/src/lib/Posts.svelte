@@ -61,7 +61,9 @@
 
     // Server already filters by unread; this just hides a post instantly on mark-read.
     const visible = $derived(posts.filter((p) => filter === "all" || !p.read));
-    const unreadTotal = $derived(posts.filter((p) => !p.read).length);
+    // Fetched separately (not derived from `posts`) since `posts` only ever
+    // holds the currently loaded page, not every unread post on the server.
+    let unreadTotal = $state(0);
     const groups = $derived.by(() => {
         const days: { day: string; items: Post[] }[] = [];
         for (const p of visible) {
@@ -82,7 +84,9 @@
 
     async function setRead(post: Post, read: boolean) {
         const previous = post.read;
+        if (previous === read) return;
         post.read = read;
+        unreadTotal += read ? -1 : 1;
         try {
             if (read) {
                 await api.markPostRead(post.id);
@@ -91,6 +95,7 @@
             }
         } catch (e) {
             post.read = previous;
+            unreadTotal += read ? 1 : -1;
             error =
                 e instanceof ApiError
                     ? e.message
@@ -101,18 +106,26 @@
     async function markAllRead() {
         const unread = posts.filter((p) => !p.read);
         unread.forEach((p) => (p.read = true));
+        unreadTotal -= unread.length;
         try {
             await Promise.all(unread.map((p) => api.markPostRead(p.id)));
         } catch (e) {
             error =
                 e instanceof ApiError ? e.message : "could not mark all read";
             await load(filter === "unread");
+            await loadUnreadTotal();
         }
     }
 
     async function checkHasFollows() {
         try {
             hasFollows = (await api.listFollowing()).length > 0;
+        } catch {}
+    }
+
+    async function loadUnreadTotal() {
+        try {
+            unreadTotal = await api.unreadCount();
         } catch {}
     }
 
@@ -162,6 +175,7 @@
     }
 
     checkHasFollows();
+    loadUnreadTotal();
     $effect(() => {
         load(filter === "unread");
     });
