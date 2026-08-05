@@ -2,9 +2,6 @@
 
 RSS/Atom feed reader — Go backend, Svelte frontend
 
-> A *murmuration* is a starling flock moving as one shape — like many feeds
-> aggregated into one reading stream.
-
 ## Highlights
 
 - **Concurrent feed fetcher** (`internal/feedfetch`) — scheduler → bounded
@@ -14,29 +11,6 @@ RSS/Atom feed reader — Go backend, Svelte frontend
 - **Zero-dependency HTTP layer** — stdlib `net/http.ServeMux`, no router.
 - **SQL-first** — sqlc + pgx/v5 + goose migrations, no ORM.
 - **Stateless auth** — bcrypt + JWT in an httpOnly cookie.
-
-## Stack
-
-| Layer    | Choice                                 |
-| -------- | --------------------------------------- |
-| Backend  | Go, stdlib `net/http`                   |
-| Database | PostgreSQL — sqlc, pgx/v5, goose         |
-| Auth     | bcrypt + JWT in httpOnly cookie         |
-| Frontend | Svelte 5 (runes) + Vite, bun            |
-| Deploy   | Docker Compose, self-hosted             |
-
-## API
-
-| Method        | Path                     | Auth |
-| ------------- | ------------------------ | ---- |
-| POST          | `/api/register`          | –    |
-| POST          | `/api/login`             | –    |
-| POST          | `/api/logout`            | –    |
-| GET           | `/api/me`                | ✅   |
-| GET / POST    | `/api/feeds`             | ✅   |
-| GET           | `/api/feeds/following`   | ✅   |
-| POST / DELETE | `/api/feeds/{id}/follow` | ✅   |
-| GET           | `/api/posts`             | ✅   |
 
 ## Getting started
 
