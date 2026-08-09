@@ -50,7 +50,8 @@
 
     let streamFoot: HTMLElement | undefined = $state();
     let posts: Post[] = $state([]);
-    let filter: "all" | "unread" = $state("all");
+    let feedFilter = $state("all");
+    let feedOptions: string[] = $state([]);
     let hasFollows = $state(true);
     let loadingOlder = $state(false);
     let ended = $state(false);
@@ -59,14 +60,12 @@
     let requestId = 0;
     let showBackToTop = $state(false);
 
-    // Server already filters by unread; this just hides a post instantly on mark-read.
-    const visible = $derived(posts.filter((p) => filter === "all" || !p.read));
     // Fetched separately (not derived from `posts`) since `posts` only ever
     // holds the currently loaded page, not every unread post on the server.
     let unreadTotal = $state(0);
     const groups = $derived.by(() => {
         const days: { day: string; items: Post[] }[] = [];
-        for (const p of visible) {
+        for (const p of posts) {
             const label = dayLabel(p.published_at);
             let g = days.find((d) => d.day === label);
             if (!g) {
@@ -112,20 +111,29 @@
         } catch (e) {
             error =
                 e instanceof ApiError ? e.message : "could not mark all read";
-            await load(filter === "unread");
-            await loadUnreadTotal();
+            await load(feedFilter);
+            await loadUnreadTotal(feedFilter);
         }
     }
 
-    async function checkHasFollows() {
+    async function loadFollowing() {
         try {
-            hasFollows = (await api.listFollowing()).length > 0;
+            const follows = await api.listFollowing();
+            hasFollows = follows.length > 0;
+            const titles = follows
+                .map((f) => f.feed_title)
+                .filter((t): t is string => !!t);
+            feedOptions = [...new Set(titles)].sort((a, b) =>
+                a.localeCompare(b),
+            );
         } catch {}
     }
 
-    async function loadUnreadTotal() {
+    async function loadUnreadTotal(feedTitle: string) {
         try {
-            unreadTotal = await api.unreadCount();
+            unreadTotal = await api.unreadCount(
+                feedTitle === "all" ? undefined : feedTitle,
+            );
         } catch {}
     }
 
@@ -138,7 +146,7 @@
             const last = posts[posts.length - 1];
             const older = await api.listPosts({
                 before: { id: last.id, published_at: last.published_at },
-                unread: filter === "unread",
+                feedTitle: feedFilter === "all" ? undefined : feedFilter,
             });
             if (id !== requestId) return; // filter changed mid-flight
             if (older.length === 0) {
@@ -157,13 +165,15 @@
         }
     }
 
-    async function load(unreadOnly: boolean) {
+    async function load(feedTitle: string) {
         const id = ++requestId;
         loading = true;
         error = "";
         ended = false;
         try {
-            const result = await api.listPosts({ unread: unreadOnly });
+            const result = await api.listPosts({
+                feedTitle: feedTitle === "all" ? undefined : feedTitle,
+            });
             if (id !== requestId) return; // a newer filter change superseded this
             posts = result;
         } catch (e) {
@@ -174,10 +184,10 @@
         }
     }
 
-    checkHasFollows();
-    loadUnreadTotal();
+    loadFollowing();
     $effect(() => {
-        load(filter === "unread");
+        load(feedFilter);
+        loadUnreadTotal(feedFilter);
     });
 
     // Tracked as state (not calling loadOlder directly in the observer) so
@@ -197,7 +207,6 @@
         return () => observer.disconnect();
     });
 
-    // !error avoids retrying in a tight loop on sustained failure; the retry button below clears it.
     $effect(() => {
         if (
             isIntersecting &&
@@ -229,31 +238,30 @@
 </script>
 
 <div class="toolbar">
-    <div class="filter" role="tablist" aria-label="filter posts">
-        <button
-            class="link-tab"
-            role="tab"
-            aria-selected={filter === "all"}
-            onclick={() => (filter = "all")}
-        >
-            all
-        </button>
-        <button
-            class="link-tab"
-            role="tab"
-            aria-selected={filter === "unread"}
-            onclick={() => (filter = "unread")}
-        >
-            unread{unreadTotal > 0 ? ` (${unreadTotal})` : ""}
-        </button>
-    </div>
+    <span class="section-label unread-count" class:has-unread={unreadTotal > 0}>
+        {unreadTotal > 0 ? `${unreadTotal} unread` : "all read"}
+    </span>
     <button class="link-tab" onclick={markAllRead}>mark all read</button>
 </div>
 <hr class="rule-heavy" />
+{#if feedOptions.length > 1}
+    <div class="feed-toolbar">
+        <select
+            class="feed-filter section-label"
+            aria-label="filter by feed"
+            bind:value={feedFilter}
+        >
+            <option value="all">All feeds</option>
+            {#each feedOptions as title (title)}
+                <option value={title}>{title}</option>
+            {/each}
+        </select>
+    </div>
+{/if}
 
-{#if visible.length === 0}
+{#if posts.length === 0}
     <div class="empty">
-        {#if posts.length === 0 && !hasFollows}
+        {#if !hasFollows}
             <span class="display">Nothing here yet.</span>
             <span class="section-label">
                 follow a feed to start your stream
@@ -261,15 +269,10 @@
             <button class="link-tab" onclick={onGoToFeeds}>
                 → go to feeds
             </button>
-        {:else if posts.length === 0}
+        {:else}
             <span class="display">Nothing here yet.</span>
             <span class="section-label">
                 no posts fetched for your feeds yet — check back soon
-            </span>
-        {:else}
-            <span class="display">You're caught up.</span>
-            <span class="section-label">
-                nothing unread — the murmuration is quiet
             </span>
         {/if}
     </div>
@@ -398,10 +401,26 @@
         margin-bottom: 0.5rem;
     }
 
-    .filter {
+    .feed-toolbar {
         display: flex;
-        gap: 0.75rem;
-        align-items: baseline;
+        padding-top: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .feed-filter {
+        appearance: none;
+        background: var(--paper-raised);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        color: var(--ink-faint);
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        cursor: pointer;
+        padding: 0.3rem 0.6rem;
+        outline: none;
     }
 
     .link-tab {
@@ -424,9 +443,12 @@
         color: var(--accent);
     }
 
-    .link-tab[aria-selected="true"] {
-        color: var(--ink);
-        border-bottom-color: var(--accent);
+    .unread-count {
+        color: var(--ink-faint);
+    }
+
+    .unread-count.has-unread {
+        color: var(--accent);
     }
 
     .link-tab:focus-visible {

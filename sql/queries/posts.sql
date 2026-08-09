@@ -40,11 +40,14 @@ SELECT
 FROM
     posts
     JOIN feed_follows ON feed_follows.feed_id = posts.feed_id
+    JOIN feeds ON feeds.id = posts.feed_id
     LEFT JOIN post_reads ON post_reads.post_id = posts.id
         AND post_reads.user_id = $1
 WHERE
     feed_follows.user_id = $1
-    AND post_reads.read_at IS NULL;
+    AND post_reads.read_at IS NULL
+    -- feed filter
+    AND (sqlc.narg('feed_title')::text IS NULL OR feeds.title = sqlc.narg('feed_title')::text);
 
 -- name: MarkPostRead :exec
 INSERT INTO post_reads (user_id, post_id)

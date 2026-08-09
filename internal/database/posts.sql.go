@@ -18,15 +18,23 @@ SELECT
 FROM
     posts
     JOIN feed_follows ON feed_follows.feed_id = posts.feed_id
+    JOIN feeds ON feeds.id = posts.feed_id
     LEFT JOIN post_reads ON post_reads.post_id = posts.id
         AND post_reads.user_id = $1
 WHERE
     feed_follows.user_id = $1
     AND post_reads.read_at IS NULL
+    -- feed filter
+    AND ($2::text IS NULL OR feeds.title = $2::text)
 `
 
-func (q *Queries) CountUnreadPostsForUser(ctx context.Context, userID uuid.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countUnreadPostsForUser, userID)
+type CountUnreadPostsForUserParams struct {
+	UserID    uuid.UUID `json:"user_id"`
+	FeedTitle *string   `json:"feed_title"`
+}
+
+func (q *Queries) CountUnreadPostsForUser(ctx context.Context, arg CountUnreadPostsForUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnreadPostsForUser, arg.UserID, arg.FeedTitle)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

@@ -1,5 +1,5 @@
-// Typed client for the murmur API. Auth is an httpOnly cookie, so there is
-// no token handling here — the browser sends it automatically.
+// Auth is an httpOnly cookie, so there is no token handling here — the browser
+// sends it automatically.
 
 export interface User {
   id: string;
@@ -115,8 +115,17 @@ export const api = {
     return request<Post[]>(`/api/posts/${qs ? `?${qs}` : ""}`);
   },
 
-  unreadCount: () =>
-    request<{ count: number }>("/api/posts/unread-count").then((r) => r.count),
+  unreadCount: async (feedTitle?: string) => {
+    const params = new URLSearchParams();
+    if (feedTitle) {
+      params.set("feed", feedTitle);
+    }
+    const qs = params.toString();
+    const r = await request<{ count: number }>(
+      `/api/posts/unread-count${qs ? `?${qs}` : ""}`,
+    );
+    return r.count;
+  },
 
   markPostRead: (postId: string) =>
     request<void>(`/api/posts/${postId}/read`, { method: "POST" }),

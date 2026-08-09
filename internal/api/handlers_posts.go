@@ -120,7 +120,15 @@ type unreadCountResponse struct {
 func (s *Server) handleUnreadCount(w http.ResponseWriter, r *http.Request) {
 	user := userFromContext(r)
 
-	count, err := s.db.CountUnreadPostsForUser(r.Context(), user.ID)
+	var feedTitle *string
+	if raw := r.URL.Query().Get("feed"); raw != "" {
+		feedTitle = &raw
+	}
+
+	count, err := s.db.CountUnreadPostsForUser(r.Context(), database.CountUnreadPostsForUserParams{
+		UserID:    user.ID,
+		FeedTitle: feedTitle,
+	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "could not count unread posts")
 		return
