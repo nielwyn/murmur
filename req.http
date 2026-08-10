@@ -58,3 +58,13 @@ Accept: application/json
 
 GET {{URL}}/api/posts/?limit=10&before_id=00000000-0000-0000-0000-000000000000&before_published_at=2026-07-01T00:00:00Z HTTP/1.1
 Accept: application/json
+
+### get unread count
+
+GET {{URL}}/api/posts/unread-count HTTP/1.1
+Accept: application/json
+
+### get unread count, filtered by feed
+
+GET {{URL}}/api/posts/unread-count?feed=hacker%20news HTTP/1.1
+Accept: application/json
