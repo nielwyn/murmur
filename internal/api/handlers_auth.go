@@ -11,7 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const tokenExpiry = 7 * 24 * time.Hour
+const (
+	tokenExpiry       = 7 * 24 * time.Hour
+	minPasswordLength = 8
+)
 
 type userResponse struct {
 	ID       uuid.UUID `json:"id"`
@@ -44,6 +47,10 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Username == "" || req.Email == "" || req.Password == "" {
 		respondError(w, http.StatusBadRequest, "username, email, and password are required")
+		return
+	}
+	if len(req.Password) < minPasswordLength {
+		respondError(w, http.StatusBadRequest, "password must be at least 8 characters")
 		return
 	}
 
