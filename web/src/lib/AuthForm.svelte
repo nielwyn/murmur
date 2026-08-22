@@ -36,7 +36,7 @@
     }
 
     onMount(() => {
-        function handleMessage(event: MessageEvent) {
+        async function handleMessage(event: MessageEvent) {
             // Only trust messages from the popup we opened — it navigates
             // through Google's origin and back to our own API's origin
             // during the flow, so checking event.source (a stable window
@@ -45,11 +45,11 @@
             if (!event.data || typeof event.data.type !== "string") return;
 
             if (event.data.type === "google-auth-success") {
-                api.me()
-                    .then(onAuthed)
-                    .catch(() => {
-                        error = "Google sign-in failed. Please try again.";
-                    });
+                try {
+                    onAuthed(await api.me());
+                } catch {
+                    error = "Google sign-in failed. Please try again.";
+                }
             } else if (event.data.type === "google-auth-error") {
                 error = googleErrorMessage(event.data.code ?? "");
             }

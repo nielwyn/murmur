@@ -53,10 +53,15 @@
         .toUpperCase();
 
     // Restore the session from the auth cookie, if there is one.
-    api.me()
-        .then((u) => (user = u))
-        .catch(() => (user = null))
-        .finally(() => (checking = false));
+    (async () => {
+        try {
+            user = await api.me();
+        } catch {
+            user = null;
+        } finally {
+            checking = false;
+        }
+    })();
 
     async function logout() {
         await api.logout();
