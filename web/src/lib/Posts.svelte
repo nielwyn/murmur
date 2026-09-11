@@ -59,6 +59,7 @@
     let error = $state("");
     let requestId = 0;
     let showBackToTop = $state(false);
+    let copiedId: string | null = $state(null);
 
     // Fetched separately (not derived from `posts`) since `posts` only ever
     // holds the currently loaded page, not every unread post on the server.
@@ -99,6 +100,18 @@
                 e instanceof ApiError
                     ? e.message
                     : "could not update read status";
+        }
+    }
+
+    async function copyLink(post: Post) {
+        try {
+            await navigator.clipboard.writeText(post.link);
+            copiedId = post.id;
+            setTimeout(() => {
+                if (copiedId === post.id) copiedId = null;
+            }, 1500);
+        } catch {
+            error = "could not copy link";
         }
     }
 
@@ -300,15 +313,66 @@
                             <span class="post-source section-label">
                                 {post.feed_title} · {timeAgo(post.published_at)}
                             </span>
-                            <button
-                                class="read-toggle"
-                                aria-label={post.read
-                                    ? "mark as unread"
-                                    : "mark as read"}
-                                onclick={() => setRead(post, !post.read)}
-                            >
-                                {post.read ? "unread?" : "mark read"}
-                            </button>
+                            <div class="post-actions">
+                                <button
+                                    class="copy-link"
+                                    aria-label={copiedId === post.id
+                                        ? "link copied"
+                                        : "copy post link"}
+                                    onclick={() => copyLink(post)}
+                                >
+                                    {#if copiedId === post.id}
+                                        <svg
+                                            viewBox="0 0 16 16"
+                                            width="14"
+                                            height="14"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="1.6"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M3 8.5l3 3 7-7"
+                                            />
+                                        </svg>
+                                    {:else}
+                                        <svg
+                                            viewBox="0 0 16 16"
+                                            width="14"
+                                            height="14"
+                                            aria-hidden="true"
+                                        >
+                                            <rect
+                                                x="5.5"
+                                                y="5.5"
+                                                width="8.5"
+                                                height="8.5"
+                                                rx="1.2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="1.4"
+                                            />
+                                            <path
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="1.4"
+                                                d="M10.5 5.5V3.7a1.2 1.2 0 0 0-1.2-1.2H3.2A1.2 1.2 0 0 0 2 3.7v6.1a1.2 1.2 0 0 0 1.2 1.2h1.8"
+                                            />
+                                        </svg>
+                                    {/if}
+                                </button>
+                                <button
+                                    class="read-toggle"
+                                    aria-label={post.read
+                                        ? "mark as unread"
+                                        : "mark as read"}
+                                    onclick={() => setRead(post, !post.read)}
+                                >
+                                    {post.read ? "unread?" : "mark read"}
+                                </button>
+                            </div>
                         </div>
                         <div class="post-body">
                             {#if post.image_url && !failedImages.has(post.image_url)}
@@ -495,6 +559,13 @@
         margin-bottom: 0.35rem;
     }
 
+    .post-actions {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+
     .post-source {
         display: inline-flex;
         align-items: baseline;
@@ -594,6 +665,26 @@
             "opsz" 40,
             "SOFT" 40,
             "WONK" 0;
+    }
+
+    .copy-link {
+        all: unset;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--ink-faint);
+        flex-shrink: 0;
+        transition: color 0.15s ease;
+    }
+
+    .copy-link:hover {
+        color: var(--accent);
+    }
+
+    .copy-link:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
     }
 
     .post-title a {
@@ -733,6 +824,7 @@
     @media (prefers-reduced-motion: reduce) {
         .link-tab,
         .read-toggle,
+        .copy-link,
         .back-to-top {
             transition: none;
         }
