@@ -1,10 +1,12 @@
 package api
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/nielwyn/murmur/internal/config"
 	"github.com/nielwyn/murmur/internal/database"
+	"github.com/nielwyn/murmur/web"
 )
 
 type Server struct {
@@ -16,6 +18,12 @@ func NewServer(db *database.Queries, cfg *config.Config) http.Handler {
 	s := &Server{db: db, cfg: cfg}
 
 	mux := http.NewServeMux()
+
+	sub, err := fs.Sub(web.Dist, "dist")
+	if err != nil {
+		panic("api: embedded web/dist unreadable: " + err.Error())
+	}
+	mux.Handle("/", http.FileServerFS(sub))
 
 	mux.HandleFunc("POST /api/register", s.handleRegister)
 	mux.HandleFunc("POST /api/login", s.handleLogin)

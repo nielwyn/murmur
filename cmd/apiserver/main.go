@@ -14,6 +14,7 @@ import (
 	"github.com/nielwyn/murmur/internal/config"
 	"github.com/nielwyn/murmur/internal/database"
 	"github.com/nielwyn/murmur/internal/feedfetch"
+	"github.com/nielwyn/murmur/internal/migrate"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -29,6 +30,10 @@ func main() {
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
+	}
+
+	if err := migrate.Up(cfg.DBUrl); err != nil {
+		log.Fatalf("error applying migrations: %v", err)
 	}
 
 	pool, err := pgxpool.New(context.Background(), cfg.DBUrl)

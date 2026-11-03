@@ -30,7 +30,6 @@ func (s *Scheduler) worker(ctx context.Context, jobs <-chan FetchJob, results ch
 	}
 }
 
-// fetchTimeout bounds the request so one slow feed can't stall the worker.
 func (s *Scheduler) fetchOne(ctx context.Context, feed database.Feed) FetchResult {
 	start := time.Now()
 
