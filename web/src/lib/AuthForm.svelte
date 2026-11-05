@@ -13,8 +13,6 @@
     let error = $state("");
     let busy = $state(false);
 
-    let googlePopup: Window | null = null;
-
     function googleErrorMessage(code: string): string {
         if (code === "google_email_taken") {
             return "An account with this email already exists — log in with your password instead.";
@@ -28,7 +26,7 @@
         const height = 620;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        googlePopup = window.open(
+        window.open(
             "/api/auth/google",
             "murmur-google-login",
             `width=${width},height=${height},left=${left},top=${top}`,
@@ -37,11 +35,7 @@
 
     onMount(() => {
         async function handleMessage(event: MessageEvent) {
-            // Only trust messages from the popup we opened — it navigates
-            // through Google's origin and back to our own API's origin
-            // during the flow, so checking event.source (a stable window
-            // reference) is more robust here than matching event.origin.
-            if (event.source !== googlePopup) return;
+            if (event.origin !== window.location.origin) return;
             if (!event.data || typeof event.data.type !== "string") return;
 
             if (event.data.type === "google-auth-success") {
